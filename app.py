@@ -7,12 +7,14 @@ from rentals import rentals_bp
 from friends import friends_bp
 from admins import admins_bp
 from clubtimeslots import clubtimeslots_bp
+from notificaions import notifications_bp
 
 app = Flask(__name__)
 app.register_blueprint(rentals_bp, url_prefix='/rentals')
 app.register_blueprint(friends_bp, url_prefix='/friends')
 app.register_blueprint(admins_bp, url_prefix='/admins')
 app.register_blueprint(clubtimeslots_bp, url_prefix='/clubtimeslots')
+app.register_blueprint(notifications_bp, url_prefix='/notifications')
 
 # App Config 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///example.db'

@@ -6,9 +6,9 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 users_bp = Blueprint('users', __name__)
 
-# user register
+# 유저 회원가입
 @users_bp.route('/users/register', methods=['POST'])
-def register():
+def users_register():
     studentid = request.json.get('sid')
     name = request.json.get('name')
     contract = request.json.get('contract')
@@ -30,9 +30,9 @@ def register():
         db.session.commit()    
         return jsonify({'message': 'User registered successfully'}), 200
 
-# user login
+# 유저 로그인
 @users_bp.route('/users/login', methods=['POST'])
-def login():
+def users_login():
     email = reqest.json.get('email')
     password = request.json.get('password')
     
@@ -44,10 +44,10 @@ def login():
     access_token = create_access_token(identity=user.userid)
     return jsonify(access_token=access_token), 200
 
-# user porfile
+# 유저 프로필
 @users_bp.route('/users/profile', methods=['GET'])
 @jwt_required()
-def profile():
+def users_profile():
     current_userid = get_jwt_identity()
     user = User.query.filter_by(userid1=current_userid).first()
     
