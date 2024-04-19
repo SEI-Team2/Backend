@@ -3,13 +3,17 @@ from sqlalchemy import Enum as EnumType
 
 class Users_UserType_enum(Enum) : 
     Student = 0
-    Manager = 1
+    Chairperson = 1
     Administrator = 2
 
+class Friends_Status_enum(Enum) : 
+    Pending = 0
+    Accepted = 1
+
 class SportSpaces_Type_enum(Enum) : 
-    Tennis = 0
-    Basketball = 1
-    Soccer = 2
+    TennisCourt = 0
+    BasketballCourt = 1
+    SoccerField = 2
 
 class Rentals_Status_enum(Enum) : 
     Pending = 0
@@ -19,20 +23,14 @@ class Rentals_Status_enum(Enum) :
 class RentalParticipants_Status_enum(Enum) : 
     Invited = 0
     Accepted = 1
-    
-class Friends_Status_enum(Enum) : 
-    Pending = 0
-    Accepted = 2
-
-class ClubTimeSlots_DayOfWeek_enum(Enum) : 
-    Monday = 0
-    Tuesday = 1
-    Wednesday = 2
-    Thursday = 3
-    Friday = 4
-    Saturday = 5
-    Sunday = 6
 
 class ClubTimeSlots_Status_enum(Enum) : 
-    Allocated = 0
-    OpenForLightning = 1
+    Pending = 0
+    Confirmed = 1
+    OpenForLightning = 2
+    Rejected = 3
+
+class Notifications_ReadStatus_enum(Enum) :
+    Unread = 0
+    Read = 1
+
