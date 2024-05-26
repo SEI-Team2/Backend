@@ -1,36 +1,49 @@
 from db import *
 from methods import *
-from flask import Blueprint, jsonify, request
-from datetime import datetime, timedelta
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import *
+from datetime import *
+from flask_jwt_extended import *
 
 admins_bp = Blueprint('admins', __name__)
 
-# pending rentals 조회
-@admins_bp.route('/rentals/pending', methods=['GET'])
-def admins_rentals_pending():
+# 동아리 관리자 임명
+# TODO for frontend :
+# 1. jwt 토큰 + studentid + clubname
+# 2. 지명 유저를 동아리 관리자로 갱신 (Users, Clubmembers)
+@admins_bp.route('/clubmanager/register', methods=['GET'])
+@jwt_required()
+def admins_clubmanager_register():
+    current_userid = get_jwt_identity()
     data = request.json
-    spaceid = data.get('spaceid')
 
-    pending_rentals = Rentals.query.filter(Rentals.spaceid==spaceid,Rentals.status == Rentals_Status_enum.Pending).all()
+    studentid = data.get('studentid')
+    clubname = data.get('clubname')
 
-    if not pending_rentals:
-        return jsonify({'error': 'no rentals in pending'}), 404
+    club = db.session.query(Clubs).filter_by(name == clubname).first()
+    if not club :
+        return jsonify({"error" : "Club not exist" }), 400
+    clubid = club.clubid
 
-    rentals_data = []
-    for rental in pending_rentals:
-        rentals_data.append({
-            'rentalid': rental.rentalid,
-            'spaceid': rental.spaceid,
-            'userid': rental.userid,
-            'starttime': rental.starttime.strftime('%Y-%m-%d %H:%M:%S'),
-            'endtime': rental.endtime.strftime('%Y-%m-%d %H:%M:%S'),
-            'createtime': rental.createtime.strftime('%Y-%m-%d %H:%M:%S'),
-            'status': rental.status,
-            'minpeoplemet': rental.minpeoplemet
-        })
+    # Users.usertype 갱신
+    user = db.session.query(Users).filter_by(studentid == studentid).first()
+    if not user:
+        return jsonify({"error" : "Studentid not exist" }), 400
+    userid= user.userid
+    user.usertype = Chairperson
+    db.session.commit()
 
-    return jsonify(rentals_data), 200
+    # ClubMembers 갱신
+    clubmember = db.session.query(Clubmembers).filter_by(userid == userid, clubid == clubid).first()
+    if not clubmember :
+        clubmember = ClubMembers(userid = userid, clubid = clubid, role = Manager)
+        db.session.add(clubmember)
+        db.session.commit()
+        return jsonify({}), 200
+    clubmember.role = Manager
+    db.session.commit()
+
+    return jsonify({}), 200
+
 
 # pending ClubTimeSlots 조회
 @admins_bp.route('/clubtimeslots/pending', methods=['GET'])
@@ -74,24 +87,6 @@ def admins_clubtimeslots_reject():
     # TODO : 현재 유저가 관리자인지 확인
     # TODO : Rentals 에서 해당 Rental status 를 rejected 로 변경
     #      : rejected 로 바뀐 후, 참여자들에게 공지
-
-# pending Rentals 수락
-@admins_bp.route('/rentals/confirm', methods=['POST'])
-def admins_rentals_confirm():
-    data = request.json
-    
-    # TODO : 현재 유저가 관리자인지 확인
-    # TODO : Rentals 에서 해당 Rental status 를 confirmed 로 변경
-    #      : confirmed 로 바뀐 후, 참여자들에게 공지
-
-# pending ClubTimeSlot 수락
-@admins_bp.route('/clubtimeslots/confirm', methods=['POST'])
-def admins_clubtimeslots_confirm():
-    data = request.json
-    
-    # TODO : 현재 유저가 관리자인지 확인
-    # TODO : Rentals 에서 해당 Rental status 를 confirmed 로 변경
-    #      : confirmed 로 바뀐 후, 참여자들에게 공지
 
 # 예약 불가능한 시간에 대한 등록
 @admins_bp.route('/cancle', methods=['POST'])

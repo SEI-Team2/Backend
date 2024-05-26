@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, request
 from datetime import datetime, timedelta
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-rentals_bp = Blueprint('rentals', __name__)
+clubrentals_bp = Blueprint('clubrentals', __name__)
 
 # 렌탈 일정 신청
 # 특정 시간의 렌탈 일정 추가
@@ -52,8 +52,9 @@ def rentals_week():
     return jsonify(rentals_data), 200
 
 # 렌탈 일정 조회(일 단위)
-# TODO for front :
-# 'TYPE' 속성을 통해 rental 과 clubrental 을 구분하여 관리해야 합니다.
+# TODO for frontend :
+# 1. 'day'("%Y-%m-%d") + ('spaceid') 를 쿼리합니다.
+# 2. 받은 조건에 해당하는 모든 동아리 정기 정보를 리턴합니다.
 @rentals_bp.route('/day', methods=['GET'])
 def rentals_day():
     data = request.json
@@ -64,38 +65,28 @@ def rentals_day():
     day_end = day_start + timedelta(days=1)
     day_of_week = methods_convert_dayofweek(day_start.strftime('%A'))
 
-    rentals_in_day = Rentals.query.filter_by(Rentals.spaceid==spaceid, Rentals.starttime >= day_start, Rentals.endtime < day_end).all()
-    
-    if not rentals_in_day :
-        return jsonify({'msg' : "No rentals in day"}), 200
+    clubrentals_in_day = ClubRentals.query.filter_by(ClubRentals.spaceid=spaceid, ClubRentals.dayofweek = day_of_week).all()
+    if not clubrentals_in_day:
+        return jsonify({'msg': 'no rentals in the week'}), 200
 
-    rentals_data = []
-    for rental in rentals_in_day:
+    clubrentals_data = []
+    for clubrental in clubrentals_in_day:
 
-        rentalid = rental.rentalid
-        userid = rental.userid
-        starttime = rental.starttime.strftime('%Y-%m-%d %H:%M:%S')
-        endtime = rental.endtime.strftime('%Y-%m-%d %H:%M:%S')
-        createtime = rental.createtime.strftime('%Y-%m-%d %H:%M:%S')
-        maxpeolple = rental.maxpeolple
-        people = rental.people
-        minpeolple = rental.minpeolple
-        if rental.status == 2 :
-            status = "Failed"
-        else :
-            status = methods_convert_status(maxpeolple,people,minpeolple).json.get('status')
+        clubname = Clubs.query.filter(Clubs.clubid=clubrental.clubid).first()
 
-        rentals_data.append({
-            'rentalid': rentalid,
-            'userid': userid,
-            'starttime': starttime,
-            'endtime': endtime,
-            'createtime': createtime,
-            'status': status,
-            'people': people,
-            'maxpeople' : maxpeople,
+
+        clubrentals_data.append({
+            'rentalid': clubrental.rentalid,
+            'spaceid': clubrental.spaceid,
+            'userid': clubrental.userid,
+            'starttime': clubrental.starttime.strftime('%Y-%m-%d %H:%M:%S'),
+            'endtime': clubrental.endtime.strftime('%Y-%m-%d %H:%M:%S'),
+            'createtime': clubrental.createtime.strftime('%Y-%m-%d %H:%M:%S'),
+            'status': clubrental.status,
+            'people': clubrental.people,
         })
-    return jsonify(rentals_data), 200
+
+    return jsonify(clubrentals_data), 200
 
 
 # 렌탈 일정 참가
