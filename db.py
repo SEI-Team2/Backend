@@ -60,7 +60,7 @@ class Rentals(db.Model):
 class RentalParticipants(db.Model):
     __tablename__ = 'Rentalparticipants'
     rentalid = db.Column(db.Integer, primary_key=True) 
-    participantid = db.Column(db.Integer, ForeignKey('Users.userid')) 
+    participantid = db.Column(db.Integer, primary_key=True, ForeignKey('Users.userid')) 
 
 class LightningRentals(db.Model):
     __tablename__ = 'Lightningrentals'

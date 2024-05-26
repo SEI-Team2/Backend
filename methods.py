@@ -6,7 +6,6 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 # 렌탈에 대한 인원 변동시, 해당 렌탈의 status 를 갱신
 def methods_update_Users_status(rentalid) :
-    
     rental = Rentals.query.filter(Rentals.rentalid == rentalid).first()
     if not rental:
         return jsonify({'error': 'invalid rentalid'})
@@ -40,7 +39,6 @@ def methods_get_Users_usertype(userid) :
 
 # dayofweek 을 받아서 Enum 값(정기 일정 요일)로 반환
 def methods_convert_dayofweek(dayofweek) :
-    
     if dayofweek = "Monday" :
         val = 0
     elif dayofweek = "Tuesday" :
@@ -59,7 +57,6 @@ def methods_convert_dayofweek(dayofweek) :
 
 # 일정의 인원수 를 받아서 Enum 값(일정 상태)로 반환
 def methods_convert_status(max_p, cur_p, min_p) :
-    
     if cur_p < min_p :
         return jsonify({'status': "Pending"})  
     elif min_p <= cur_p and cur_p < max_p :
@@ -68,4 +65,14 @@ def methods_convert_status(max_p, cur_p, min_p) :
         return jsonify({'status': "Restricted"})
 
     return jsonify({'dayofweek':val})
+
+# spacetype Enum 을 종목 명으로 반환
+def methods_convert_spacetype(spacetype) :
+    if spacetype == 0 :
+        return "테니스"
+    elif spacetype == 1 :
+        return "농구"
+    else :
+        return "축구"
+
 

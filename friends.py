@@ -86,7 +86,7 @@ def friends_requests_receive_accept():
 
     # 알림 생성 : 친구요청 발신자에게 요청 수락 알림
     current_user = Users.query.filter_by(Users.userid == current_userid).first()
-    notification = Notifications(userid = userid, msg = current_user.name +" 이 친구 요청을 수락했습니다!", timestamp = datetime.utcnow ,status = Unread )
+    notification = Notifications(userid = userid, msg = current_user.name + " 님이 친구 요청을 수락했습니다!", timestamp = datetime.utcnow ,status = Unread )
     db.session.add(notification)
     db.session.commit()
     # 알림 생성

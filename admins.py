@@ -6,6 +6,35 @@ from flask_jwt_extended import *
 
 admins_bp = Blueprint('admins', __name__)
 
+
+# 동아리 관리자 명단 조회
+# TODO for frontend :
+# 1. jwt 토큰 
+# 2. 등록된 모든 동아리와 각 동아리의 매니저 목록 반환
+@admins_bp.route('/clubmanager/list', methods=['GET'])
+@jwt_required()
+def admins_clubmanager_list():
+    current_userid = get_jwt_identity()
+    data = request.json
+
+    clubmanagers = db.session.query(ClubMembers).filter_by(role == Manager).all()
+    if not clubmanagers :
+        return jsonify({"error" : "Clubmanagers not exist" }), 400
+
+    clubmanagers_data = []
+    for clubmanager in clubmanagers :
+        user = Users.query.filter_by(Users.userid == clubmanager.userid).first()
+        club = db.session.query(Clubs).filter_by(clubid == clubmanager.clubid).first()
+        clubmanagers_data.append({
+            'name' : user.name,
+            'studentid' : user.studentid,
+            'contact': user.contact,
+            'email' : user.email,
+            'clubname' : club.name,
+        })
+    return jsonify(clubmanagers_data), 200
+
+
 # 동아리 관리자 임명
 # TODO for frontend :
 # 1. jwt 토큰 + studentid + clubname

@@ -46,25 +46,9 @@ def users_login():
 
     # 입력된 계정이 블랙리스트에 있으면 로그인 차단
     black = Blacklist.query.filter_by(Blacklist.userid=user.userid).first()
-
     if black :
         return jsonify({'error': 'Contact to admin'}), 401
 
     # 로그인 성공 : JWT 발급
     access_token = create_access_token(identity=user.userid)
     return jsonify(access_token=access_token), 200
-
-
-# 유저 프로필
-@users_bp.route('/profile', methods=['GET'])
-@jwt_required()
-def users_profile():
-    current_userid = get_jwt_identity()
-    user = Users.query.filter_by(Users.userid=current_userid).first()
-    
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-
-    # 유저 프로필에 필요한 항목들을 넘겨줌
-    return jsonify(name = user.name,studentid = user.studentid,email=user.email), 200
-

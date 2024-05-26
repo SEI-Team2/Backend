@@ -17,6 +17,7 @@ app.register_blueprint(friends_bp, url_prefix='/friends')
 app.register_blueprint(admins_bp, url_prefix='/admins')
 app.register_blueprint(clubtimeslots_bp, url_prefix='/clubtimeslots')
 app.register_blueprint(notifications_bp, url_prefix='/notifications')
+app.register_blueprint(profiles_bp, url_prefix='/profiles')
 
 # App Config 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///example.db'
