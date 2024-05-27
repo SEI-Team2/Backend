@@ -9,7 +9,7 @@ profiles_bp = Blueprint('profiles', __name__)
 # 유저 정보
 # TODO for frontend :
 # 1. jwt 토큰
-# 2. 현재 유저 정보를 반환합니다.
+# 2. 현재 유저 정보{name,contact,email,studentid}를 반환합니다.
 @users_bp.route('/user', methods=['GET'])
 @jwt_required()
 def profiles_user():
@@ -20,13 +20,14 @@ def profiles_user():
         return jsonify({'error': 'User not found'}), 400
 
     # 유저 정보 반환
-    return jsonify({'name' : user.name, 'email' : user.contact, 'email' : user.email, 'studentid' : user.studentid}), 200
+    return jsonify({'name' : user.name, 'contact' : user.contact, 'email' : user.email, 'studentid' : user.studentid}), 200
 
 
 # 유저 참여 일정 조회
 # TODO for frontend :
 # 1. jwt 토큰
-# 2. 현재가 참여중인 모든 일정들의 정보를 반환합니다.
+# 2. 현재유저 참여중인 모든 일정들의 정보[{sport,starttime,endtime,people,clubname,status}]를 반환합니다.
+# 3. clubname 이 있으면 동아리 일정, 없으면 일반 일정입니다.
 @users_bp.route('/schedule', methods=['GET'])
 @jwt_required()
 def profiles_schedule():
@@ -85,6 +86,7 @@ def profiles_schedule():
 # TODO for frontend :
 # 1. jwt 토큰
 # 2. 현재 유저가 동아리 담당자 자격임을 가정합니다.
+# 3. [{name,studentid,contact,email}]
 @users_bp.route('/clubmemebers/list', methods=['GET'])
 @jwt_required()
 def profiles_clubmembers_list():
