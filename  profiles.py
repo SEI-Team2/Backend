@@ -182,6 +182,24 @@ def profiles_clubmembers_delete():
                 return jsonify({'error' : "User not exist as club member" }), 400
 
 
+# 회원 패스워드 변경
+# TODO for frontend :
+# 1. jwt 토큰 + 변경할 패스워드
+# 2. 패스워드 변경 결과를 반환합니다.
+@users_bp.route('/settings/changepw', methods=['GET'])
+@jwt_required()
+def profiles_settings_changepw():
+    current_userid = get_jwt_identity()
+    data = request.json
 
+    pw = data.get('pw')
+    user = db.session.query(Users).filter_by(userid == current_userid).first()
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 400
+
+    user.set_password(pw)
+    db.session.commit()
+    return jsonify({}), 200
    
     
