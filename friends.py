@@ -86,7 +86,7 @@ def friends_requests_receive_accept():
 
     # 알림 생성 : 친구요청 발신자에게 요청 수락 알림
     current_user = Users.query.filter_by(Users.userid == current_userid).first()
-    notification = Notifications(userid = userid, msg = current_user.name + " 님이 친구 요청을 수락했습니다!", timestamp = datetime.utcnow ,status = Unread )
+    notification = Notifications(userid = userid, msg = current_user.name + " 님이 친구 요청을 수락했습니다!", timestamp = datetime.utcnow ,status = Notifications_ReadStatus_enum.Unread, friendid = userid)
     db.session.add(notification)
     db.session.commit()
     # 알림 생성
@@ -193,14 +193,14 @@ def friends_requests():
     if already :
         return jsonify({'error' : "Already requested" }), 400   
 
-    friend = Friends(Friends.userid1 = current_userid, Friends.userid2 = userid, Friends.status = Pending)
+    friend = Friends(userid1 = current_userid, userid2 = userid, status = Pending)
     
     db.session.add(friend)
     db.session.commit()
 
     # 알림 생성 : 친구요청 수신자에게 요청 수신 알림
     current_user = Users.query.filter_by(Users.userid == current_userid).first()
-    notification = Notifications(userid = userid, msg = current_user.name +" 으로 부터 친구 요청이 도착했습니다!", timestamp = datetime.utcnow ,status = Unread )
+    notification = Notifications(userid = userid, msg = current_user.name +" 으로 부터 친구 요청이 도착했습니다!", timestamp = datetime.utcnow ,status = Notifications_ReadStatus_enum.Unread, friendid = current_userid)
     db.session.add(notification)
     db.session.commit()
     # 알림 생성

@@ -19,12 +19,12 @@ def users_register():
     if not studentid or not name or not contract or not email or not password:
         return jsonify({'error': 'Please provide both username and email'}), 400
     
-    user = Users.query.filter_by(Users.studentid=studentid).first()
+    user = Users.query.filter_by(Users.studentid == studentid).first()
 
     if user :
         return jsonify({'error': 'User already exists'}), 400
     else :
-        user = Users(Users.studentid = studentid, Users.name=name, Users.contact=contact, Users.email=email)
+        user = Users(studentid = studentid, name=name, contact=contact, email=email)
         user.set_password(password)
         
         db.session.add(user)
@@ -39,13 +39,13 @@ def users_login():
     password = request.json.get('password')
     
     # 입력된 계정이 유효한지 확인
-    user = Users.query.filter_by(Users.email=email).first()
+    user = Users.query.filter_by(email=email).first()
     
     if not user or not user.check_password(password) :
         return jsonify({'error': 'Invalid email or password'}), 401
 
     # 입력된 계정이 블랙리스트에 있으면 로그인 차단
-    black = Blacklist.query.filter_by(Blacklist.userid=user.userid).first()
+    black = Blacklist.query.filter_by(Blacklist.userid == user.userid).first()
     if black :
         return jsonify({'error': 'Contact to admin'}), 401
 

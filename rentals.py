@@ -6,114 +6,189 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 rentals_bp = Blueprint('rentals', __name__)
 
-# 렌탈 일정 신청
-# 특정 시간의 렌탈 일정 추가
-@rentals_bp.route('/create', methods=['POST'])
-def rentals_create():
-
+# 대여 조회(참여 가능한 일정들만)
+@rentals_bp.route('/list', methods=['GET'])
+@jwt_required()
+def rentals_list():
+    methods_update_rentals()
+    current_userid = get_jwt_identity()
     data = request.json
+
     spaceid = data.get('spaceid')
-    starttime = data.get('starttime')
-    endtime = data.get('endtime')
-    curtime = datetime.utcnow
+    date_str = data.get('date')
 
-    # TODO : Rentals, ClubTimeslot, 조교 재량 시간?? 에 대한 체크 수행 후 가능하면 추가.
-    
-    
-# 렌탈 일정 조회(주 단위)
-@rentals_bp.route('/week', methods=['GET'])
-def rentals_week():
-    data = request.json
-    spaceid = data.get('spaceid')
-    week = data.get('week')
+    if not spaceid or not date_str:
+        return jsonify({'error': 'Space ID and date are required'}), 400
 
-    week_start = datetime.strptime(week, '%Y-%m-%d')
+    if not (0 <= spaceid or spaceid <= 2) :
+        return jsonify({'error': 'Space ID is invalid'}), 400
 
-    week_end = week_start + timedelta(days=7)
+    try:
+        date = datetime.strptime(date_str, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({'error': 'Invalid date format, should be YYYY-MM-DD'}), 400
 
-    rentals_in_week = Rentals.query.filter(Rentals.spaceid==spaceid,Rentals.starttime >= week_start, Rentals.starttime < week_end).all()
+    start_of_day = datetime.combine(date, datetime.min.time())
+    end_of_day = datetime.combine(date, datetime.max.time())
 
-    if not rentals_in_week:
-        return jsonify({'error': 'no rentals in the week'}), 404
+    rentals = db.session.query(Rentals).filter(
+        Rentals.spaceid == spaceid,
+        Rentals.starttime >= start_of_day,
+        Rentals.endtime <= end_of_day,
+        Rentals.rentalstatus != Rentals_Status_enum.Close,
+        _or(Rentals.status == Rentals_Status_enum.Light,
+        Rentals.status == Rentals_Status_enum.Club)
+    ).all()
 
-    rentals_data = []
-    for rental in rentals_in_week:
-        rentals_data.append({
+    rentals_list = []
+    for rental in rentals :
+        rentals_List.append({
             'rentalid': rental.rentalid,
             'spaceid': rental.spaceid,
             'userid': rental.userid,
+
+            'clubid': rental.clubid,
+            'timelimit': rental.timelimit,
+            
             'starttime': rental.starttime.strftime('%Y-%m-%d %H:%M:%S'),
             'endtime': rental.endtime.strftime('%Y-%m-%d %H:%M:%S'),
             'createtime': rental.createtime.strftime('%Y-%m-%d %H:%M:%S'),
-            'status': rental.status,
-            'minpeoplemet': rental.minpeoplemet
+            
+            'maxpeople': rental.maxpeople,
+            'minpeople': rental.minpeople,
+            'people': rental.people,
+
+            'rentaltype': rental.rentaltype.name,
+            'rentalstatus': rental.rentalstatus.name,
+            'rentalsflag': rental.rentalsflag.name,
+
+            'desc' : rental.desc, 
         })
 
-    return jsonify(rentals_data), 200
-
-# 렌탈 일정 조회(일 단위)
-# TODO for front :
-# 'TYPE' 속성을 통해 rental 과 clubrental 을 구분하여 관리해야 합니다.
-@rentals_bp.route('/day', methods=['GET'])
-def rentals_day():
-    data = request.json
-    spaceid = data.get('spaceid')
-    day = data.get('day')
-
-    day_start = datetime.strptime(day, '%Y-%m-%d')
-    day_end = day_start + timedelta(days=1)
-    day_of_week = methods_convert_dayofweek(day_start.strftime('%A'))
-
-    rentals_in_day = Rentals.query.filter_by(Rentals.spaceid==spaceid, Rentals.starttime >= day_start, Rentals.endtime < day_end).all()
-    
-    if not rentals_in_day :
-        return jsonify({'msg' : "No rentals in day"}), 200
-
-    rentals_data = []
-    for rental in rentals_in_day:
-
-        rentalid = rental.rentalid
-        userid = rental.userid
-        starttime = rental.starttime.strftime('%Y-%m-%d %H:%M:%S')
-        endtime = rental.endtime.strftime('%Y-%m-%d %H:%M:%S')
-        createtime = rental.createtime.strftime('%Y-%m-%d %H:%M:%S')
-        maxpeolple = rental.maxpeolple
-        people = rental.people
-        minpeolple = rental.minpeolple
-        if rental.status == 2 :
-            status = "Failed"
-        else :
-            status = methods_convert_status(maxpeolple,people,minpeolple).json.get('status')
-
-        rentals_data.append({
-            'rentalid': rentalid,
-            'userid': userid,
-            'starttime': starttime,
-            'endtime': endtime,
-            'createtime': createtime,
-            'status': status,
-            'people': people,
-            'maxpeople' : maxpeople,
-        })
-    return jsonify(rentals_data), 200
+    return jsonify({'rentals' : rentals_list}), 200
 
 
-# 렌탈 일정 참가
-# TODO for front :
-# rental 과 clubrental 에 대한 참가 신청을 구분하여 수행해야 합니다.
+# 대여 참여
 @rentals_bp.route('/join', methods=['GET'])
+@jwt_required()
 def rentals_join():
+    methods_update_rentals()
+    current_userid = get_jwt_identity()
     data = request.json
+
     rentalid = data.get('rentalid')
-    userid = data.get('userid')
 
-    # TODO : Rentals 의 status 를 통해 참여 가능한지 확인하고, 가능한 경우 RentalParticipants 에 등록
+    if not rentalid :
+        return jsonify({'error': 'Rental ID are required'}), 400
 
-@rentals_bp.route('/clubrental/join', methods=['GET'])
-def rentals_join():
+    rental = db.session.query(Rentals).filter(
+        Rentals.rentalid == rentalid,
+        Rentals.status != Rentals_Status_enum.Close,
+    ).first()
+
+    if not rental :
+        return jsonify({'error': 'Rental ID is invalid'}), 400
+
+    # Light 일정에 참여하는 경우
+    if rental.rentaltype == Rentals_Types_enum.Light :
+        rentalparticipant = db.session.query(RentalParticipants).filter(RentalParticipants.rentalid == rentalid, participantid == current_userid).first()
+    
+        if rentalparticipant : 
+            return jsonify({'error': 'You already participated in'}), 400
+
+        rentalparticipant = RentalParticipants(rentalid = rentalid, participantid = current_userid)
+        db.session.add(rentalparticipant)
+        rental.poeple += 1
+
+    # Club 일정에 참여하는 경우
+    elif rental.rentaltype == Rentals_Types_enum.Club :
+        rentalparticipant = db.session.query(RentalParticipants).filter(RentalParticipants.rentalid == rentalid, participantid == current_userid).first()
+    
+        if rentalparticipant : 
+            return jsonify({'error': 'You already participated in'}), 400
+
+        # 동아리 인원만 모집중인 경우
+        if rental.rentalstatus == Rentals_Status_enum.Half :
+            clubmember = db.session.query(ClubMembers).filter(ClubMembers.userid == current_userid, ClubMembers.clubid == rental.clubid).first()
+            # 동아리 회원인 경우
+            if clubmember : 
+                rentalparticipant = RentalParticipants(rentalid = rentalid, participantid = current_userid)
+                db.session.add(rentalparticipant)
+                rental.poeple += 1
+            
+            # 동아리 회원 아닌 경우
+            else :
+                return jsonify({'error': 'You cannot join the Club'}), 400
+        # 동아리 인원 모집 후 추가 모집
+        elif rental.rentalstatus == Rentals_Status_enum.Open :
+            rentalparticipant = RentalParticipants(rentalid = rentalid, participantid = current_userid)
+            db.session.add(rentalparticipant)
+            rental.poeple += 1
+
+    db.session.commit()
+
+    return jsonify({}), 200
+
+
+# Light 대여 생성
+@rentals_bp.route('/create', methods=['GET'])
+@jwt_required()
+def rentals_create():
+    methods_update_rentals()
+    current_userid = get_jwt_identity()
     data = request.json
-    rentalid = data.get('rentalid')
-    userid = data.get('userid')
 
-    # TODO : Rentals 의 status 를 통해 참여 가능한지 확인하고, 가능한 경우 RentalParticipants 에 등록
+    spaceid = data.get('spaceid')
+    starttime_str = data.get('starttime')
+    starttime = datetime.strptime(starttime_str, '%Y-%m-%d %H:%M:%S')
+    endtime_str = data.get('endtime')
+    endtime = datetime.strptime(endtime_str, '%Y-%m-%d %H:%M:%S')
+    maxpeople = data.get('maxpeople')
+    desc = data.get('desc')
+    friends = data.get('friends',[])
 
+    # spaceid 검사
+    if not (0 <= sapceid <= 2) :
+        return jsonify({'error': 'Invalid spaceid'}), 400
+    
+    # time 검사
+    if startime >= endtime :
+        return jsonify({'error': 'Invalid starttime and endtime'}), 400
+
+    if not (6 <= starttime.hour <= 22) or not (6 <= endtime.hour <= 22) :
+        return jsonify({'error': 'Invalid starttime and endtime'}), 400
+
+    rental = db.session.query(Rentals).filter(
+        Rentals.spaceid == spaceid,
+        Rentals.starttime >= starttime,
+        Rentals.endtime <= endtime,
+    ).first()
+    if rental :
+        return jsonify({'error': 'Rental already exist'}), 400
+    
+    # maxpeople 검사
+    sportspace = db.session.query(SportSpace).filter(
+        SportSpace.spaceid == spaceid
+    ).first() 
+    if not (sportspace.minpeople <= maxpeople <= sportspace.maxpeople) :
+        return jsonify({'error': 'Invalid maxpeople value'}), 400
+
+    # friends 검사 및 초대 알림 생성
+    for friend in friends :
+        user = db.session.query(Users).filter(Users.studentid == friend).first() 
+        if not user :
+            continue
+        friendid = user.userid
+        notification = Notifications(userid = friendid, msg = "Invited to schedule", timestamp = datetime.utcnow(), status = Notifications_ReadStatus_enum.Unread, rentalid = rental.rentalid)
+        db.session.add(notification)
+
+    # rental 생성
+    rental = Rentals(spaceid = spaceid, userid = current_userid, starttime = starttime, endtime = endtime, createtime = datetime.utcnow(), maxpeople = maxpeople, minpeolple = sportspace.minpeople, people = 1, rentaltype = Rentals_Types_enum.Light, rentalstatus = Rentals_Status_enum.Open, rentalsflag = Rentals_Flags_enum.Nonfix, desc = desc)
+    db.session.add(rental)
+
+    # user 를 일정에 추가
+    rentalparticipant = RentalParticipants(rentalid = rental.rentalid, participantid = current_userid)
+    db.session.add(rentalparticipant)
+    
+    db.session.commit()
+    return jsonify({}), 200
