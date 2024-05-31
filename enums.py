@@ -21,17 +21,14 @@ class Rentals_Types_enum(Enum) :
     Club = 1
     Restrict = 2
 
-
 class Rentals_Status_enum(Enum) : 
     Open = 0
     Half = 1
     Close = 2
 
-
 class Rentals_Flags_enum(Enum) : 
     Fix = 0
     Nonfix = 1
-
 
 class RentalParticipants_Status_enum(Enum) : 
     Invited = 0
@@ -40,6 +37,17 @@ class RentalParticipants_Status_enum(Enum) :
 class Notifications_ReadStatus_enum(Enum) :
     Unread = 0
     Read = 1
+
+class Notifications_Types_enum(Enum) :
+    rental_fix = 0
+    rental_cancle = 1
+    friend_request = 2
+    friend_accept = 3
+    friend_reject = 4
+    club_member_add = 5
+    club_member_delete = 6
+    club_manager_add = 7
+    club_manager_delete = 8
 
 class ClubRentals_Dayofweek_enum(Enum) :
     Monday = 0

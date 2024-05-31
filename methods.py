@@ -4,7 +4,6 @@ from flask import *
 from datetime import *
 from flask_jwt_extended import *
 
-
 # Rentals 의 모든 튜플들 갱신
 def methods_update_rentals( ) :
 

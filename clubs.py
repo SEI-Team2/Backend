@@ -53,6 +53,7 @@ def clubs_clubmanagers():
         if not user or not club :
             continue
         clubmanagers_data.append({
+            'clubid' : club.clubid,
             'clubname' : club.name,
             'userid' : user.userid,
             'studentid' : user.studentid,
@@ -70,6 +71,7 @@ def clubs_clubmanager_delete():
     data = request.json
 
     studentid = data.get('studentid')
+    clubid = data.get('clubid')
 
     # user 탐색
     user = db.session.query(Users).filter_by(Users.studentid == studentid).first()
@@ -78,16 +80,26 @@ def clubs_clubmanager_delete():
     if user.usertype != Users_UserType_enum.Clubmanager :
         return jsonify({"error" : "Not manager of club" }), 400
 
+    # club 탐색
+    club = db.session.query(Clubs).filter_by(Clubs.clubid == clubid).first()
+    if not club :
+        return jsonify({"error" : "club not exist" }), 400
+
     # ClubMembers 탐색
-    clubmember = db.session.query(Clubmembers).filter_by(userid == user.userid, roll == Users_UserType_enum.Clubmanager).first()
+    clubmember = db.session.query(Clubmembers).filter_by(userid == user.userid, roll == Clubmembers_Role_enum.Manager).first()
     if not clubmember :
         return jsonify({"error" : "clubmember not exist" }), 400
-    clubid = clubmember.clubid
     db.session.delete(clubmember) 
 
     # 튜플 갱신
     user.usertype = Users_UserType_enum.Student
-    db.session.add(Clubmembers(userid = user.userid, clubid = clubid, roll = Clubmembers_Role_enum.Member))
+    db.session.add(Clubmembers(userid = user.userid, clubid = club.clubid, roll = Clubmembers_Role_enum.Member))
+    
+    # 알림 #
+    notify = Notification( userid=user.userid, notifytype=8, clubid=club.clubid)
+    db.session.add(notify)
+    # 알림 #
+
     db.session.commit()
 
     return jsonify({}), 200
@@ -116,13 +128,20 @@ def clubs_clubmanager_register():
         return jsonify({"error" : "Already manager of club" }), 400
 
     # ClubMembers 탐색
-    clubmember = db.session.query(Clubmembers).filter_by(userid == user.userid, clubid == club.clubid).first()
-    if clubmember :
-        db.session.delete(clubmemeber)
+    clubmembers = db.session.query(Clubmembers).filter_by(userid == user.userid, clubid == club.clubid).all()
+    if clubmembers :
+        for clubmember in clubmembers :
+            db.session.delete(clubmemeber)
     
     # 튜플 갱신
     user.usertype = Users_UserType_enum.Clubmanager
     db.session.add(Clubmembers(userid = user.userid, clubid = club.clubid, roll = Clubmembers_Role_enum.Manager))
+    
+    # 알림 #
+    notify = Notifications(userid=user.userid, notifytype=7, clubid=club.clubid)
+    db.session.add(notify)
+    # 알림 #
+    
     db.session.commit()
 
     return jsonify({}), 200

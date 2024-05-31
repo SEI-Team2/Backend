@@ -29,12 +29,14 @@ def friends_list():
     for friend_id in friends_id :
         user = Users.query.filter_by(Users.userid == friend_id).first()
         friends.append({
+            'userid' : user.userid,
             'name' : user.name,
             'studentid' : user.studentid,
             'contact': user.contact,
             'email' : user.email,
         })
-    return jsonify(friends), 200
+
+    return jsonify({'friends' : friends}), 200
 
 
 # 받은 친구 요청 목록 조회
@@ -53,43 +55,40 @@ def friends_requests_receive():
     for request in requests :
         user = Users.query.filter_by(Users.userid == request.userid1).first()
         requests_data.append({
+            'userid' : user.userid,
             'name' : user.name,
             'studentid' : user.studentid,
             'contact': user.contact,
             'email' : user.email,
         })
-    return jsonify(requests_data), 200
+
+    return jsonify({'requests' : requests_data}), 200
 
 
 # 받은 친구 요청 수락
-# TODO for frontend :
-# 1. jwt 토큰 + studentid
-# 2. 받은 친구 신청에 대한 수락 처리
 @friends_bp.route('/reqeusts/receive/accept', methods=['GET'])
 @jwt_required()
 def friends_requests_receive_accept():
     current_userid = get_jwt_identity()
     data = request.json
+
     studentid = data.get('studentid')
 
     user = Users.query.filter_by(Users.studentid == studentid).first()
     if not user :
             return jsonify({"error" : "Studentid not exist" }), 400
-    userid = user.userid
 
-    request = db.session.query(Friends).filter_by(userid1 == userid, userid2 == current_userid, status == Pending).first()
+    request = db.session.query(Friends).filter_by(Friends.userid1 == user.userid, Friends.userid2 == current_userid, Friends.status == Pending).first()
     if not request:
         return jsonify({"error" : "Request not exist" }), 400
-    request.status = Accepted
+    request.status = Friends_Status_enum.Accepted
+
+    # 알림 #
+    notify = Notifications(userid=user.userid, notifytype=3, friendid=current_userid)
+    db.session.add(notify)
+    # 알림 #
 
     db.session.commit()
-
-    # 알림 생성 : 친구요청 발신자에게 요청 수락 알림
-    current_user = Users.query.filter_by(Users.userid == current_userid).first()
-    notification = Notifications(userid = userid, msg = current_user.name + " 님이 친구 요청을 수락했습니다!", timestamp = datetime.utcnow ,status = Notifications_ReadStatus_enum.Unread, friendid = userid)
-    db.session.add(notification)
-    db.session.commit()
-    # 알림 생성
 
     return jsonify({}), 200
 
@@ -103,18 +102,23 @@ def friends_requests_receive_accept():
 def friends_requests_receive_reject():
     current_userid = get_jwt_identity()
     data = request.json
+
     studentid = data.get('studentid')
 
     user = Users.query.filter_by(Users.studentid == studentid).first()
     if not user :
             return jsonify({"error" : "Studentid not exist" }), 400
-    userid = user.userid
 
-    request = db.session.query(Friends).filter_by(userid1 == userid, userid2 == current_userid, status == Pending).first()
+    request = db.session.query(Friends).filter_by(Friends.userid1 == user.userid, Friends.userid2 == current_userid, Friends.status == Pending).first()
     if not request:
         return jsonify({"error" : "Request not exist" }), 400
-    request.status = Rejected
+    request.status = Friends_Status_enum.Rejected
 
+    # 알림 #
+    notify = Notifications(userid=user.userid, notifytype=4, friendid=current_userid)
+    db.session.add(notify)
+    # 알림 #
+    
     db.session.commit()
 
     return jsonify({}), 200
@@ -130,18 +134,20 @@ def friends_requests_send():
     current_userid = get_jwt_identity()
     data = request.json
     
-    requests = Friends.query.filter_by(Friends.userid1 == current_userid, Friends.status == Pending).all()
+    requests = Friends.query.filter_by(Friends.userid1 == current_userid, Friends.status != Friends_Status_enum.Accepted).all()
     
     requests_data = []
     for request in requests :
         user = Users.query.filter_by(Users.userid == request.userid2).first()
         requests_data.append({
+            'status' : request.status.name,
+            'userid' : user.userid,
             'name' : user.name,
             'studentid' : user.studentid,
             'contact': user.contact,
             'email' : user.email,
         })
-    return jsonify(requests_data), 200
+    return jsonify({'requests' : requests_data}), 200
 
 
 # 보낸 친구 요청 목록 취소
@@ -153,41 +159,36 @@ def friends_requests_send():
 def friends_requests_cancle():
     current_userid = get_jwt_identity()
     data = request.json
+
     studentid = data.get('studentid')
 
     user = Users.query.filter_by(Users.studentid == studentid ).first()
     if not user :
         return jsonify({'error' : "Studentid not exist" }), 400 
-    userid = user.userid
 
-    deletion_results = []
-
-    rows_deleted = db.session.query(Friends).filter_by(userid1==current_userid, userid2==userid, status == Pending).delete()
-    deletion_results.append((userid1, userid2, rows_deleted))
-
+    request = Friends.query.filter_by(Friends.userid1 == current_userid, Friends.status == Friends_Status_enum.Pending).all()
+    if not request :
+        return jsonify({'error' : "request not exist" }), 400
+    
+    db.session.delete(request)
+    
     db.session.commit()
 
-    for userid1, userid2, rows_deleted in deletion_results:
-        if rows_deleted > 0:
-            return jsonify({}), 200 
-        else:
-            return jsonify({'error' : "Request not exist" }), 400 
+    return 
 
 
 # 친구 요청 
-# TODO for frontend :
-# 1. jwt 토큰 + ('studentid') 으로 해당 경로로 요청합니다.
 @friends_bp.route('/reqeusts', methods=['GET'])
 @jwt_required()
 def friends_requests():
     current_userid = get_jwt_identity()
     data = request.json
+
     studentid = data.get('studentid')
     
     user = Users.query.filter_by(Users.studentid == studentid).first()
     if not user :
         return jsonify({'error' : "Studentid not exist" }), 400 
-    userid = user.userid
 
     already = Friends.query.filter_by(Friends.userid1 == current_userid, Friends.userid2 == userid).all()
     if already :
@@ -196,14 +197,14 @@ def friends_requests():
     friend = Friends(userid1 = current_userid, userid2 = userid, status = Pending)
     
     db.session.add(friend)
-    db.session.commit()
 
-    # 알림 생성 : 친구요청 수신자에게 요청 수신 알림
+    # 알림 #
     current_user = Users.query.filter_by(Users.userid == current_userid).first()
-    notification = Notifications(userid = userid, msg = current_user.name +" 으로 부터 친구 요청이 도착했습니다!", timestamp = datetime.utcnow ,status = Notifications_ReadStatus_enum.Unread, friendid = current_userid)
-    db.session.add(notification)
+    notify = Notifications(userid = user.userid, notifytype=2, friendid = current_userid)
+    db.session.add(notify)
+    # 알림 #
+
     db.session.commit()
-    # 알림 생성
 
     return jsonify({}), 200
 

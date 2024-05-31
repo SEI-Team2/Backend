@@ -130,6 +130,30 @@ def rentals_join():
     return jsonify({}), 200
 
 
+# 대여 참여 취소
+@rentals_bp.route('/cancle', methods=['GET'])
+@jwt_required()
+def rentals_cancle():
+    methods_update_rentals()
+    current_userid = get_jwt_identity()
+    data = request.json
+
+    data.get('rentalid')
+
+    rental = db.session.query(Rentals).filter(Rentals.rentalid == rentalid).first()
+    if not rental :
+        return jsonify({'error': 'rental not exist'}), 400
+    if rental.rentalflag == Rentals_Flags_enum.Fix :
+        return jsonify({'error': 'rental is fixed'}), 400
+    rental.people -= 1
+    rentalparticipant = db.session.query(RentalParticipants).filter(RentalParticipants.rentalid == rentalid, RentalParticipants.participantid == current_userid).first()
+    if not rentalparticipant :
+        return jsonify({'error': 'rentalparticipant not exist'}), 400
+    db.session.delete(rentalparticipant)
+    db.session.commit()
+
+    return jsonify({}), 200
+
 # Light 대여 생성
 @rentals_bp.route('/create', methods=['GET'])
 @jwt_required()
@@ -194,3 +218,37 @@ def rentals_create():
     
     db.session.commit()
     return jsonify({}), 200
+
+
+# 대여 삭제
+@rentals_bp.route('/delete', methods=['GET'])
+@jwt_required()
+def rentals_delete():
+    methods_update_rentals()
+    current_userid = get_jwt_identity()
+    data = request.json
+
+    rentalid = data.get('rentalid')
+    notify_users = []
+
+    rental = db.session.query(Rentals).filter(Rentals.rentalid == rentalid, Rentals.userid == current_userid).first()
+    if not rental :
+        return jsonify({'error' : 'rental not exist'}), 400
+    if rental.rentalflag == Rentals_Flags_enum.Fix :
+        return jsonify({'error' : 'rental is fixed'}), 400    
+    rentalparticipants = db.session.query(Rentals).filter(Rentals.rentalid == rentalid).all()
+    for rentalparticipant in rentalparticipants :
+        notify_users.append(rentalparticipant.participantid)
+        db.session.delete(rentalparticipant)
+    
+    # 알림 #
+    for notify_user in notify_users :
+        notify = Notifications(userid=notify_user, notifytype=1, spaceid=rental.spaceid, starttime=rental.starttime, endtime=rental.endtime)
+        db.session.add(notify)
+    # 알림 #
+
+    db.session.delete(rental)
+    db.session.commit()
+
+    return jsonify({}), 200
+

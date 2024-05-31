@@ -49,7 +49,7 @@ class Rentals(db.Model):
     userid = db.Column(db.Integer, nullable=False) 
 
     clubid = db.Column(db.Integer, default = None)
-    clubregularid = db.Column(db.Integer, ForeignKey('ClubRegulars.clubregularid'))
+    clubregularid = db.Column(db.Integer, ForeignKey('Clubregulars.clubregularid'))
     timelimit = db.Column(db.Integer, default = None)
 
     starttime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow()) 
@@ -101,14 +101,21 @@ class Notifications(db.Model):
     __tablename__ = 'Notifications'
     notificationid = db.Column(db.Integer, primary_key=True)
     userid = db.Column(db.Integer,ForeignKey('Users.userid'), nullable = False)   
-    msg = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     status = db.Column(EnumType(Notifications_ReadStatus_enum), nullable=False, default = Notifications_ReadStatus_enum.Unread)
 
     # 알림 타입 구분
+    notifytype = db.Column(EnumType(Notifications_Types_enum), nullable=False, default = Notifications_Types_enum.rental_fix)
+    # 일정 
     rentalid = db.Column(db.Integer,ForeignKey('Rentals.rentalid'), default = None)
+    spaceid = db.Column(db.Integer,ForeignKey('SportsSpace.spaceid'), default = None)  
+    starttime = db.Column(db.DateTime) 
+    endtime = db.Column(db.DateTime)  
+    # 친구 
     friendid = db.Column(db.Integer,ForeignKey('Users.userid'), default = None)
+    # 동아리 
     clubid = db.Column(db.Integer,ForeignKey('Clubs.clubid'), default = None)
+
 
 class Blacklist(db.Model):
     __tablename__ = 'Blacklist'
