@@ -56,13 +56,13 @@ class Rentals(db.Model):
     endtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())  
     createtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
     
-    maxpeople = db.Column(db.Integer, nullable=False)
-    minpeople = db.Column(db.Integer, nullable=False)
-    people = db.Column(db.Integer, nullable=False)
+    maxpeople = db.Column(db.Integer, nullable=False, default=0)
+    minpeople = db.Column(db.Integer, nullable=False, default=0)
+    people = db.Column(db.Integer, nullable=False, default=0)
 
     rentaltype = db.Column(EnumType(Rentals_Types_enum), nullable=False, default = Rentals_Types_enum.Light)
     rentalstatus = db.Column(EnumType(Rentals_Status_enum), nullable=False, default = Rentals_Status_enum.Open)
-    rentalsflag = db.Column(EnumType(Rentals_Flags_enum), nullable=False, default = Rentals_Flags_enum.Fix)
+    rentalflag = db.Column(EnumType(Rentals_Flags_enum), nullable=False, default = Rentals_Flags_enum.Fix)
 
     desc = db.Column(db.Text)
 
@@ -114,6 +114,6 @@ class Blacklist(db.Model):
     __tablename__ = 'Blacklist'
     blackid = db.Column(db.Integer, primary_key=True)
     userid = db.Column(db.Integer, ForeignKey('Users.userid', ondelete='CASCADE'))
-    reason = db.Column(db.Text, primary_key=True) 
+    reason = db.Column(db.Text) 
     createtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 

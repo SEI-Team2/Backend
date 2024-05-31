@@ -60,7 +60,7 @@ def rentals_list():
 
             'rentaltype': rental.rentaltype.name,
             'rentalstatus': rental.rentalstatus.name,
-            'rentalsflag': rental.rentalsflag.name,
+            'rentalflag': rental.rentalflag.name,
 
             'desc' : rental.desc, 
         })
@@ -159,9 +159,11 @@ def rentals_create():
         return jsonify({'error': 'Invalid starttime and endtime'}), 400
 
     rental = db.session.query(Rentals).filter(
-        Rentals.spaceid == spaceid,
-        Rentals.starttime >= starttime,
-        Rentals.endtime <= endtime,
+            Rentals.spaceid == spaceid,
+            _or((Rentals.starttime >= start_datetime,
+            Rentals.starttime <= end_datetime),
+            (Rentals.endtime >= start_datetime,
+            Rentals.endtime <= end_datetime))
     ).first()
     if rental :
         return jsonify({'error': 'Rental already exist'}), 400
@@ -183,7 +185,7 @@ def rentals_create():
         db.session.add(notification)
 
     # rental 생성
-    rental = Rentals(spaceid = spaceid, userid = current_userid, starttime = starttime, endtime = endtime, createtime = datetime.utcnow(), maxpeople = maxpeople, minpeolple = sportspace.minpeople, people = 1, rentaltype = Rentals_Types_enum.Light, rentalstatus = Rentals_Status_enum.Open, rentalsflag = Rentals_Flags_enum.Nonfix, desc = desc)
+    rental = Rentals(spaceid = spaceid, userid = current_userid, starttime = starttime, endtime = endtime, createtime = datetime.utcnow(), maxpeople = maxpeople, minpeolple = sportspace.minpeople, people = 1, rentaltype = Rentals_Types_enum.Light, rentalstatus = Rentals_Status_enum.Open, rentalflag = Rentals_Flags_enum.Nonfix, desc = desc)
     db.session.add(rental)
 
     # user 를 일정에 추가

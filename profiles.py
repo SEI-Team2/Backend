@@ -62,7 +62,7 @@ def profiles_schedules():
 
             'rentaltype': rental.rentaltype.name,
             'rentalstatus': rental.rentalstatus.name,
-            'rentalsflag': rental.rentalsflag.name,
+            'rentalflag': rental.rentalflag.name,
 
             'desc' : rental.desc,
         })
