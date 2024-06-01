@@ -13,6 +13,7 @@ from rentals import rentals_bp
 from schedules import schedules_bp
 from users import users_bp
 from methods import *
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.register_blueprint(clubs_bp, url_prefix='/clubs')
@@ -25,7 +26,7 @@ app.register_blueprint(schedules_bp, url_prefix='/schedules')
 app.register_blueprint(users_bp, url_prefix='/users')
 
 # App Config 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345678@localhost/mydatabase'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/mydatabase.db'
 app.config['JWT_SECRET_KEY'] = secrets.token_urlsafe(32)
 
 # Initialize SQLAlchemy
@@ -39,6 +40,10 @@ with app.app_context():
     db.create_all()
     methods_init_datas()
 # Routes
+@app.route("/")
+def hello_world():
+    return "소공개 2팀 화이팅!"
 
+CORS(app)
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0",port=8080)

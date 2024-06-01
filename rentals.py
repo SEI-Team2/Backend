@@ -44,7 +44,7 @@ def rentals_list():
 
     rentals_list = []
     for rental in rentals :
-        rentals_List.append({
+        rentals_list.append({
             'rentalid': rental.rentalid,
             'spaceid': rental.spaceid,
             'userid': rental.userid,
