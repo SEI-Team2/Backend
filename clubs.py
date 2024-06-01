@@ -115,8 +115,11 @@ def clubs_clubmanagers_add():
     # club 탐색
     club = db.session.query(Clubs).filter(Clubs.clubid == clubid).first()
     if not club :
-        return jsonify({"error" : "Club not exist" }), 401
-
+        # 없으면 동아리 생성
+        club = Clubs(clubid = clubid, name = 'Club' + str(clubid))
+        db.session.add(club)
+        db.session.commit()
+        
     # user 탐색
     user = db.session.query(Users).filter(Users.studentid == studentid).first()
     if not user:
@@ -214,6 +217,8 @@ def clubs_clubregular_add():
     if not club :
         # 없으면 동아리 생성
         club = Clubs(clubid = clubid, name = 'Club' + str(clubid))
+        db.session.add(club)
+        db.session.commit()
     # 운동공간 탐색
     sportsspace = db.session.query(SportsSpace).filter(SportsSpace.spaceid == spaceid).first()
     if not sportsspace :
