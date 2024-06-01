@@ -7,17 +7,20 @@ from flask_jwt_extended import *
 schedules_bp = Blueprint('schedules', __name__)
 
 # 스케쥴 조회
-@schedules_bp.route('/list', methods=['GET'])
+@schedules_bp.route('/list', methods=['POST'])
 @jwt_required()
 def schedules_list():
     methods_update_rentals()
+    current_userid = get_jwt_identity()
+    data = request.json
+    
     spaceid = data.get('spaceid')
     date_str = data.get('date')
 
     if not spaceid or not date_str:
         return jsonify({'error': 'Space ID and date are required'}), 400
 
-    if not (0 <= spaceid <= 2) :
+    if not (1 <= spaceid <= 3) :
         return jsonify({'error': 'Space ID is invalid'}), 400
 
     try:
@@ -29,9 +32,9 @@ def schedules_list():
     end_of_day = datetime.combine(date, datetime.max.time())
 
     rentals = db.session.query(Rentals).filter(
-        Rentals.spaceid == spaceid,
-        Rentals.starttime >= start_of_day,
-        Rentals.endtime <= end_of_day,
+    Rentals.spaceid == spaceid,
+    Rentals.starttime >= start_of_day,
+    Rentals.endtime <= end_of_day
     ).all()
 
     rentals_list = []

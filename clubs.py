@@ -7,10 +7,7 @@ from flask_jwt_extended import *
 clubs_bp = Blueprint('clubs', __name__)
 
 # 동아리 목록 조회
-# TODO for frontend :
-# 1. jwt 토큰 
-# 2. 등록된 모든 동아리와 각 동아리 목록 반환
-@clubs_bp.route('/clubs', methods=['GET'])
+@clubs_bp.route('/clubs', methods=['POST'])
 @jwt_required()
 def clubs_clubs():
     current_userid = get_jwt_identity()
@@ -33,23 +30,20 @@ def clubs_clubs():
 
 
 # 동아리 관리자 명단 조회
-# TODO for frontend :
-# 1. jwt 토큰 
-# 2. 등록된 모든 동아리와 각 동아리의 매니저 목록 반환
-@clubs_bp.route('/clubmanagers', methods=['GET'])
+@clubs_bp.route('/clubmanagers', methods=['POST'])
 @jwt_required()
 def clubs_clubmanagers():
     current_userid = get_jwt_identity()
     data = request.json
 
-    clubmanagers = db.session.query(ClubMembers).filter_by(role == Clubmembers_Role_enum.Manager).all()
+    clubmanagers = db.session.query(ClubMembers).filter(ClubMembers.role == Clubmembers_Role_enum.Manager).all()
     if not clubmanagers :
-        return jsonify({"error" : "Clubmanagers not exist" }), 400
+        return jsonify({"error" : "Clubmanagers not exist" }), 401
 
     clubmanagers_data = []
     for clubmanager in clubmanagers :
-        user = Users.query.filter_by(Users.userid == clubmanager.userid).first()
-        club = db.session.query(Clubs).filter_by(clubid == clubmanager.clubid).first()
+        user = Users.query.filter(Users.userid == clubmanager.userid).first()
+        club = db.session.query(Clubs).filter(Clubs.clubid == clubmanager.clubid).first()
         if not user or not club :
             continue
         clubmanagers_data.append({
@@ -64,40 +58,43 @@ def clubs_clubmanagers():
     return jsonify(clubmanagers_data), 200
 
 # 동아리 관리자 삭제
-@clubs_bp.route('/clubmanager/delete', methods=['GET'])
+@clubs_bp.route('/clubmanagers/delete', methods=['POST'])
 @jwt_required()
-def clubs_clubmanager_delete():
+def clubs_clubmanagers_delete():
     current_userid = get_jwt_identity()
     data = request.json
 
-    studentid = data.get('studentid')
+    userid = data.get('userid')
     clubid = data.get('clubid')
 
     # user 탐색
-    user = db.session.query(Users).filter_by(Users.studentid == studentid).first()
+    user = db.session.query(Users).filter(Users.userid == userid).first()
     if not user:
-        return jsonify({"error" : "Studentid not exist" }), 400
+        return jsonify({"error" : "Userid not exist" }), 401
     if user.usertype != Users_UserType_enum.Clubmanager :
-        return jsonify({"error" : "Not manager of club" }), 400
+        return jsonify({"error" : "Not manager of club" }), 402
 
     # club 탐색
-    club = db.session.query(Clubs).filter_by(Clubs.clubid == clubid).first()
+    club = db.session.query(Clubs).filter(Clubs.clubid == clubid).first()
     if not club :
-        return jsonify({"error" : "club not exist" }), 400
+        return jsonify({"error" : "club not exist" }), 403
 
     # ClubMembers 탐색
-    clubmember = db.session.query(Clubmembers).filter_by(userid == user.userid, roll == Clubmembers_Role_enum.Manager).first()
+    clubmember = db.session.query(ClubMembers).filter(ClubMembers.userid == user.userid, ClubMembers.role == Clubmembers_Role_enum.Manager).first()
     if not clubmember :
-        return jsonify({"error" : "clubmember not exist" }), 400
+        return jsonify({"error" : "clubmember not exist" }), 404
     db.session.delete(clubmember) 
+    db.session.commit()
 
     # 튜플 갱신
     user.usertype = Users_UserType_enum.Student
-    db.session.add(Clubmembers(userid = user.userid, clubid = club.clubid, roll = Clubmembers_Role_enum.Member))
-    
+    db.session.add(ClubMembers(userid = user.userid, clubid = club.clubid, role = Clubmembers_Role_enum.Member))
+    db.session.commit()
+
     # 알림 #
-    notify = Notification( userid=user.userid, notifytype=8, clubid=club.clubid)
+    notify = Notifications( userid=user.userid, notifytype=Notifications_Types_enum.club_manager_delete, clubid=club.clubid)
     db.session.add(notify)
+    db.session.commit()
     # 알림 #
 
     db.session.commit()
@@ -106,9 +103,9 @@ def clubs_clubmanager_delete():
 
 
 # 동아리 관리자 추가
-@clubs_bp.route('/clubmanager/add', methods=['GET'])
+@clubs_bp.route('/clubmanagers/add', methods=['POST'])
 @jwt_required()
-def clubs_clubmanager_register():
+def clubs_clubmanagers_add():
     current_userid = get_jwt_identity()
     data = request.json
 
@@ -116,30 +113,33 @@ def clubs_clubmanager_register():
     studentid = data.get('studentid')
 
     # club 탐색
-    club = db.session.query(Clubs).filter_by(Clubs.clubid == clubid).first()
+    club = db.session.query(Clubs).filter(Clubs.clubid == clubid).first()
     if not club :
-        return jsonify({"error" : "Club not exist" }), 400
+        return jsonify({"error" : "Club not exist" }), 401
 
     # user 탐색
-    user = db.session.query(Users).filter_by(Users.studentid == studentid).first()
+    user = db.session.query(Users).filter(Users.studentid == studentid).first()
     if not user:
-        return jsonify({"error" : "Studentid not exist" }), 400
+        return jsonify({"error" : "Studentid not exist" }), 402
     if user.usertype == Users_UserType_enum.Clubmanager :
-        return jsonify({"error" : "Already manager of club" }), 400
+        return jsonify({"error" : "Already manager of club" }), 403
 
     # ClubMembers 탐색
-    clubmembers = db.session.query(Clubmembers).filter_by(userid == user.userid, clubid == club.clubid).all()
+    clubmembers = db.session.query(ClubMembers).filter(ClubMembers.userid == user.userid, ClubMembers.clubid == club.clubid).all()
     if clubmembers :
         for clubmember in clubmembers :
-            db.session.delete(clubmemeber)
+            db.session.delete(clubmember)
+            db.session.commit()
     
     # 튜플 갱신
     user.usertype = Users_UserType_enum.Clubmanager
-    db.session.add(Clubmembers(userid = user.userid, clubid = club.clubid, roll = Clubmembers_Role_enum.Manager))
-    
+    db.session.add(ClubMembers(userid = user.userid, clubid = club.clubid, role = Clubmembers_Role_enum.Manager))
+    db.session.commit()
+
     # 알림 #
-    notify = Notifications(userid=user.userid, notifytype=7, clubid=club.clubid)
+    notify = Notifications(userid=user.userid, notifytype=Notifications_Types_enum.club_manager_add, clubid=club.clubid)
     db.session.add(notify)
+    db.session.commit()
     # 알림 #
     
     db.session.commit()
@@ -148,7 +148,7 @@ def clubs_clubmanager_register():
 
 
 # 동아리 정기 일정 목록
-@clubs_bp.route('/clubregular', methods=['GET'])
+@clubs_bp.route('/clubregular', methods=['POST'])
 @jwt_required()
 def clubs_clubregular():
     current_userid = get_jwt_identity()
@@ -158,31 +158,36 @@ def clubs_clubregular():
     
     clubregulars_data = []
     for clubregular in clubregulars :
-        rental = db.session.query(Rentals).query(Rentals.clubregularid == clubregular.clubregularid).first()
+        rental = db.session.query(Rentals).filter(Rentals.clubregularid == clubregular.clubregularid).first()
         if not rental :
             db.session.delete(clubregular)
+            db.session.commit()
             continue
-        club = db.session.query(Clubs).query(Clubs.clubid == clubregular.clubid).first()
+        club = db.session.query(Clubs).filter(Clubs.clubid == clubregular.clubid).first()
         if not club :
             db.session.delete(clubregular)
+            db.session.commit()
             continue
         clubregulars_data.append({
             'clubregularid' : clubregular.clubregularid,
-            'clubid' : clubregular.clubid,
+            'clubid' : club.clubid,
             'clubname' : club.name,
-            'spaceid' : clubregular.spaceid,
+            'spaceid' : club.spaceid,
             'dayofweek' : clubregular.dayofweek,
-            'starttime' : clubregular.starttime,
-            'endtime' : clubregular.endtime,
+            'starttime' : clubregular.starttime.strftime('%H:%M:%S'),
+            'endtime' : clubregular.endtime.strftime('%H:%M:%S'),
         })
+
+    db.session.commit()
 
     return jsonify({'clubregulars' : clubregulars_data}), 200
 
 
 # 동아리 정기 일정 추가
-@clubs_bp.route('/clubregular/add', methods=['GET'])
+@clubs_bp.route('/clubregular/add', methods=['POST'])
 @jwt_required()
 def clubs_clubregular_add():
+    methods_update_rentals()
     current_userid = get_jwt_identity()
     data = request.json
 
@@ -197,44 +202,46 @@ def clubs_clubregular_add():
         starttime = datetime.strptime(starttime_str, '%H:%M:%S').time()
         endtime = datetime.strptime(endtime_str, '%H:%M:%S').time()
     except ValueError:
-        return jsonify({'error': 'Invalid time format, expected HH:MM:SS'}), 400
-    if not(0 <= spaceid <=2) :
-        return jsonify({'error': 'Invalid day of the week'}), 400
-    if not (0 <= weekofday <= 6):
-        return jsonify({'error': 'Invalid day of the week'}), 400
+        return jsonify({'error': 'Invalid time format, expected HH:MM:SS'}), 401
+    if not(1 <= spaceid <= 3) :
+        return jsonify({'error': 'Invalid spaceid'}), 402
+    if not (0 <= dayofweek <= 6):
+        return jsonify({'error': 'Invalid dayofweek'}), 403
     if not nums :
-        return jsonify({'error': 'nums must be given'}), 400
-
-
-    clubregular = ClubRegulars(clubid = clubid, spaceid = spaceid, dayofweek = dayofweek, starttime = starttime, endtime = endtime)
-    db.session.add(clubregular)
+        nums = 20
 
     sportsspace = db.session.query(SportsSpace).filter(SportsSpace.spaceid == spaceid).first()
+    if not sportsspace :
+        return jsonify({'error': 'Invalid spaceid'}), 404
+    clubregular = ClubRegulars(clubid = clubid, spaceid = spaceid, dayofweek = dayofweek, starttime = starttime, endtime = endtime)
+    db.session.add(clubregular)
+    db.session.commit()
 
     # 다가올 X요일 탐색
     today = datetime.today()
-    days_ahead = weekofday - today.weekday()
+    days_ahead = dayofweek - today.weekday()
     if days_ahead < 0:
         days_ahead += 7
     next_occurrence = today + timedelta(days=days_ahead)
 
+    cnt = 0
     for i in range(nums):
         start_datetime = datetime.combine(next_occurrence, starttime)
         end_datetime = datetime.combine(next_occurrence, endtime)
 
         # 현재 시간 이후인지 확인
-        if datetime.utcnow() >= start_datetime :
+        if datetime.now() >= start_datetime :
             next_occurrence += timedelta(days=7)
             continue
 
         # 기존 일정이 있는지 확인
-        rental = db.session.query(Rentals).filter(
-            Rentals.spaceid == spaceid,
-            _or((Rentals.starttime >= start_datetime,
-            Rentals.starttime <= end_datetime),
-            (Rentals.endtime >= start_datetime,
-            Rentals.endtime <= end_datetime))
-        ).first()
+        rentals = db.session.query(Rentals).filter(
+        Rentals.spaceid == spaceid,
+        or_(
+            and_(Rentals.starttime >= start_datetime, Rentals.starttime <= end_datetime),
+            and_(Rentals.endtime >= start_datetime, Rentals.endtime <= end_datetime)
+        )
+        ).all()
         if rentals :
             continue
 
@@ -254,23 +261,29 @@ def clubs_clubregular_add():
             people=0,  
 
             rentaltype=Rentals_Types_enum.Club,
-            rentalstatus=Rentals_Status_enum.Open,
-            rentalflag=Rentals_Flags_enum.Fix,  
+            rentalstatus=Rentals_Status_enum.Half,
+            rentalflag=Rentals_Flags_enum.Nonfix,  
             
         )
         
+        cnt += 1
         db.session.add(new_rental)
+        db.session.commit()
         next_occurrence += timedelta(days=7) 
 
+    if cnt == 0 :
+        db.session.delete(clubregular)
+        db.session.commit()
+        return jsonify({'error' : 'Cannot add clubregular'}), 405    
     db.session.commit()
-
     return jsonify({}), 200
 
 
 # 동아리 정기 일정 삭제
-@clubs_bp.route('/clubregular/delete', methods=['GET'])
+@clubs_bp.route('/clubregular/delete', methods=['POST'])
 @jwt_required()
 def clubs_clubregular_delete():
+    methods_update_rentals()
     current_userid = get_jwt_identity()
     data = request.json
 
@@ -285,13 +298,18 @@ def clubs_clubregular_delete():
         # 렌탈 참여자 삭제
         rentalparticipants = db.session.query(RentalParticipants).filter(RentalParticipants.rentalid == rental.rentalid).all()
         for rentalparticipant in rentalparticipants :
-            db.session.delete(rentalparticipant)    
+            # 알림 #
+            notify = Notifications(userid=rentalparticipant.participantid, notifytype=Notifications_Types_enum.rental_cancle, rentalid=rental.rentalid, spaceid=rental.spaceid, starttime=rental.starttime, endtime=rental.endtime)
+            db.session.add(notify)
+            db.session.commit()
+            # 알림 #
+            db.session.delete(rentalparticipant)
+            db.session.commit()
         # 렌탈 삭제
         db.session.delete(rental)
-    
+        db.session.commit()
     # 정기일정 삭제
     db.session.delete(clubregular)
-
     db.session.commit()
 
     return jsonify({}), 200

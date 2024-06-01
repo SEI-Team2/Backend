@@ -7,41 +7,36 @@ from flask_jwt_extended import *
 profiles_bp = Blueprint('profiles', __name__)
 
 # 유저 정보
-# TODO for frontend :
-# 1. jwt 토큰
-# 2. 현재 유저 정보{name,contact,email,studentid}를 반환합니다.
-@profiles_bp.route('/user', methods=['GET'])
+@profiles_bp.route('/user', methods=['POST'])
 @jwt_required()
 def profiles_user():
     current_userid = get_jwt_identity()
-    user = db.session.query(Users).filter_by(userid == current_userid).first()
+    data = request.json
+
+    user = db.session.query(Users).filter(Users.userid == current_userid).first()
 
     if not user:
         return jsonify({'error': 'User not found'}), 400
 
     # 유저 정보 반환
-    return jsonify({'name' : user.name, 'contact' : user.contact, 'email' : user.email, 'studentid' : user.studentid, 'usertype' : user.usertype}), 200
+    return jsonify({'name' : user.name, 'contact' : user.contact, 'email' : user.email, 'studentid' : user.studentid, 'usertype' : user.usertype.name}), 200
 
 
 # 유저 참여 일정 조회
-# TODO for frontend :
-# 1. jwt 토큰
-# 2. 현재유저 참여중인 모든 일정들의 정보[{sport,starttime,endtime,people,clubname,status}]를 반환합니다.
-# 3. clubname 이 있으면 동아리 일정, 없으면 일반 일정입니다.
-@profiles_bp.route('/schedules', methods=['GET'])
+@profiles_bp.route('/schedules', methods=['POST'])
 @jwt_required()
 def profiles_schedules():
     methods_update_rentals()
     current_userid = get_jwt_identity()
     data = request.json
 
-    rentalparticipants = db.session.query(RentalParticipants).filter_by(participantid == current_userid).all()
+    rentalparticipants = db.session.query(RentalParticipants).filter(RentalParticipants.participantid == current_userid).all()
     if not rentalparticipants :
         return jsonify({'error': 'No rental schedules'}), 400
 
     schedules = []
     for rentalparticipant in rentalparticipants :
-        rental = db.session.query(Rentals).filter_by(rentalid == rentalparticipant.rentalid).first()        
+        rental = db.session.query(Rentals).filter(Rentals.rentalid == rentalparticipant.rentalid).first()        
         if not rental :
             continue
         schedules.append({
@@ -68,36 +63,32 @@ def profiles_schedules():
         })
 
 
-    return jsonify({rental_data}), 200
+    return jsonify({'schedules' : schedules}), 200
 
 
 # 동아리원 목록 조회
-# TODO for frontend :
-# 1. jwt 토큰
-# 2. 현재 유저가 동아리 담당자 자격임을 가정합니다.
-# 3. [{name,studentid,contact,email}]
-@profiles_bp.route('/clubmemebers/list', methods=['GET'])
+@profiles_bp.route('/clubmembers/list', methods=['POST'])
 @jwt_required()
 def profiles_clubmembers_list():
     current_userid = get_jwt_identity()
     data = request.json
     
-    # 동아리 회장 탐색
-    clubmanager = db.session.query(ClubMembers).filter_by(ClubMembers.userid == current_userid, ClubMembers.role == Clubmembers_Role_enum.Manager).first()     
+    # 어느 동아리 회장인지 탐색
+    clubmanager = db.session.query(ClubMembers).filter(ClubMembers.userid == current_userid, ClubMembers.role == Clubmembers_Role_enum.Manager).first()     
     if not clubmanager :
-        return jsonify({'error': 'clubmanager not exist'}), 400
+        return jsonify({'error' : 'clubmanager not exist'}), 400
 
     # 동아리 탐색
-    club = db.session.query(Clubs).filter_by(Clubs.clubid == clubmember.clubid).first()     
+    club = db.session.query(Clubs).filter(Clubs.clubid == clubmanager.clubid).first()     
     if not club :
-        return jsonify({'error': 'Mananging club not exist'}), 400
+        return jsonify({'error': 'Mananging club not exist'}), 401
 
     # 동아리 회원 탐색
-    clubmembers = db.session.query(ClubMembers).filter_by(ClubMembers.clubid == club.clubid, ClubMembers.role == Clubmembers_Role_enum.Member).all()  
+    clubmembers = db.session.query(ClubMembers).filter(ClubMembers.clubid == club.clubid, ClubMembers.role == Clubmembers_Role_enum.Member).all()  
 
     clubmembers_data = []
     for clubmember in clubmembers :
-        user = db.session.query(Users).filter_by(Users.userid == clubmember.userid).first()
+        user = db.session.query(Users).filter(Users.userid == clubmember.userid).first()
         clubmembers_data.append({
             'userid' : user.userid,
             'studentid' : user.studentid,
@@ -109,10 +100,7 @@ def profiles_clubmembers_list():
 
 
 # 동아리원 목록 추가
-# TODO for frontend :
-# 1. jwt 토큰 + 유저이름 + 유저학번
-# 2. 현재 유저가 동아리 담당자 자격임을 가정합니다.
-@profiles_bp.route('/clubmemebers/add', methods=['GET'])
+@profiles_bp.route('/clubmembers/add', methods=['POST'])
 @jwt_required()
 def profiles_clubmembers_add():
     current_userid = get_jwt_identity()
@@ -120,32 +108,34 @@ def profiles_clubmembers_add():
 
     studentid = data.get('studentid')
 
-    # 동아리 회장 탐색
-    clubmanager = db.session.query(ClubMembers).filter_by(ClubMembers.userid == current_userid, ClubMembers.role == Clubmembers_Role_enum.Manager).first()     
+    # 어느 동아리 회장인지 탐색
+    clubmanager = db.session.query(ClubMembers).filter(ClubMembers.userid == current_userid, ClubMembers.role == Clubmembers_Role_enum.Manager).first()     
     if not clubmanager :
-        return jsonify({'error': 'clubmanager not exist'}), 400
+        return jsonify({'error' : 'clubmanager not exist'}), 400
 
-    # 동아리 탐색    
-    club = db.session.query(Clubs).filter_by(Clubs.clubid == clubmanager.clubid).first()  
+    # 동아리 탐색
+    club = db.session.query(Clubs).filter(Clubs.clubid == clubmanager.clubid).first()     
     if not club :
-        return jsonify({'error': 'club not exist'}), 400
+        return jsonify({'error': 'Mananging club not exist'}), 401
 
     # 추가할 유저 탐색
-    user = Users.query.filter_by(Users.studentid == studentid).first()
+    user = Users.query.filter(Users.studentid == studentid).first()
     if not user :
-        return jsonify({'error': 'User not exist'}), 400
+        return jsonify({'error': 'User not exist'}), 402
 
     # 유저가 이미 동아리에 있는지 확인
-    clubmember = db.session.query(ClubMembers).filter_by(ClubMembers.userid == user.userid).first()
+    clubmember = db.session.query(ClubMembers).filter(ClubMembers.userid == user.userid).first()
     if clubmember :
-        return jsonify({'error': 'User exist in clubmember'}), 400
+        return jsonify({'error': 'User exist in clubmember'}), 403
     
     # 유저를 동아리 회원으로 추가
     db.session.add(ClubMembers(userid = user.userid, clubid = club.clubid, role = Clubmembers_Role_enum.Member))
+    db.session.commit()
 
     # 알림 #
-    notify = Notifications(userid = user.userid, notifytype=5, clubid=club.clubid)
+    notify = Notifications(userid = user.userid, notifytype=Notifications_Types_enum.club_member_add, clubid=club.clubid)
     db.session.add(notify)
+    db.session.commit()
     # 알림 #
 
     db.session.commit()
@@ -157,7 +147,7 @@ def profiles_clubmembers_add():
 # TODO for frontend :
 # 1. [jwt 토큰 + 유저이름 + 유저학번]
 # 2. 현재 유저가 동아리 담당자 자격임을 가정합니다.
-@profiles_bp.route('/clubmemebers/delete', methods=['POST'])
+@profiles_bp.route('/clubmembers/delete', methods=['POST'])
 @jwt_required()
 def profiles_clubmembers_delete():
     current_userid = get_jwt_identity()
@@ -165,32 +155,34 @@ def profiles_clubmembers_delete():
 
     studentid = data.get('studentid')
 
-    # 동아리 회장 탐색
-    clubmanager = db.session.query(ClubMembers).filter_by(ClubMembers.userid == current_userid, ClubMembers.role == Clubmembers_Role_enum.Manager).first()     
+    # 어느 동아리 회장인지 탐색
+    clubmanager = db.session.query(ClubMembers).filter(ClubMembers.userid == current_userid, ClubMembers.role == Clubmembers_Role_enum.Manager).first()     
     if not clubmanager :
-        return jsonify({'error': 'clubmanager not exist'}), 400
+        return jsonify({'error' : 'clubmanager not exist'}), 401
 
-    # 동아리 탐색    
-    club = db.session.query(Clubs).filter_by(Clubs.clubid == clubmanager.clubid).first()  
+    # 동아리 탐색
+    club = db.session.query(Clubs).filter(Clubs.clubid == clubmanager.clubid).first()     
     if not club :
-        return jsonify({'error': 'club not exist'}), 400
+        return jsonify({'error': 'Mananging club not exist'}), 402
 
     # 삭제할 유저 탐색
-    user = Users.query.filter_by(Users.studentid == studentid).first()
+    user = Users.query.filter(Users.studentid == studentid).first()
     if not user :
-        return jsonify({'error': 'User not exist'}), 400
+        return jsonify({'error': 'User not exist'}), 403
 
     # 유저가 이미 동아리에 있는지 확인
-    clubmember = db.session.query(ClubMembers).filter_by(ClubMembers.userid == user.userid, ClubMembers.clubid == club.clubid, ClubMembers.roll == Clubmembers_Role_enum.Member).first()
+    clubmember = db.session.query(ClubMembers).filter(ClubMembers.userid == user.userid, ClubMembers.clubid == club.clubid, ClubMembers.roll == Clubmembers_Role_enum.Member).first()
     if not clubmember :
-        return jsonify({'error': 'User not exist in clubmember or manager'}), 400
+        return jsonify({'error': 'User not exist in clubmember or manager'}), 404
     
     # 유저를 동아리 회원에서 삭제
-    db.session.delete(clubmemeber)
+    db.session.delete(clubmember)
+    db.session.commit()
 
     # 알림 #
-    notify = Notifications(userid = user.userid, notifytype=6, clubid=club.clubid)
+    notify = Notifications(userid = user.userid, notifytype=Notifications_Types_enum.club_member_delete, clubid=club.clubid)
     db.session.add(notify)
+    db.session.commit()
     # 알림 #
 
     db.session.commit()
@@ -201,23 +193,19 @@ def profiles_clubmembers_delete():
 
 
 # 회원 패스워드 변경
-# TODO for frontend :
-# 1. jwt 토큰 + 변경할 패스워드
-# 2. 패스워드 변경 결과를 반환합니다.
-@profiles_bp.route('/settings/changepw', methods=['GET'])
+@profiles_bp.route('/settings/changepw', methods=['POST'])
 @jwt_required()
 def profiles_settings_changepw():
     current_userid = get_jwt_identity()
     data = request.json
 
     pw = data.get('pw')
-    user = db.session.query(Users).filter_by(userid == current_userid).first()
+    user = db.session.query(Users).filter(Users.userid == current_userid).first()
     
     if not user:
-        return jsonify({'error': 'User not found'}), 400
+        return jsonify({'error': 'User not found'}), 401
 
     user.set_password(pw)
-
     db.session.commit()
     
     return jsonify({}), 200

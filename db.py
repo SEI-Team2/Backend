@@ -15,8 +15,8 @@ class Users(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False) # 이메일
     verified = db.Column(db.Boolean, default = False)
     usertype = db.Column(EnumType(Users_UserType_enum), default = Users_UserType_enum.Student) # 권한
-    regtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow) # 가입 시각
-    password_hash = db.Column(db.String(100), nullable=False) # 패스워드
+    regtime = db.Column(db.DateTime, nullable=False, default=datetime.now()) # 가입 시각
+    password_hash = db.Column(db.String(255), nullable=False) # 패스워드
     
     def set_password(self,password):
         self.password_hash = generate_password_hash(password)
@@ -52,9 +52,9 @@ class Rentals(db.Model):
     clubregularid = db.Column(db.Integer, ForeignKey('Clubregulars.clubregularid'))
     timelimit = db.Column(db.Integer, default = None)
 
-    starttime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow()) 
-    endtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())  
-    createtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
+    starttime = db.Column(db.DateTime, nullable=False, default=datetime.now()) 
+    endtime = db.Column(db.DateTime, nullable=False, default=datetime.now())  
+    createtime = db.Column(db.DateTime, nullable=False, default=datetime.now())
     
     maxpeople = db.Column(db.Integer, nullable=False, default=0)
     minpeople = db.Column(db.Integer, nullable=False, default=0)
@@ -73,8 +73,8 @@ class ClubRegulars(db.Model):
     clubid = db.Column(db.Integer, ForeignKey('Clubs.clubid'))
     spaceid = db.Column(db.Integer, ForeignKey('Sportsspace.spaceid'))  
     dayofweek = db.Column(db.Integer, default=0) 
-    starttime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  
-    endtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  
+    starttime = db.Column(db.Time, nullable=False)  
+    endtime = db.Column(db.Time, nullable=False)  
 
 
 class RentalParticipants(db.Model):
@@ -87,7 +87,7 @@ class Clubs(db.Model):
     __tablename__ = 'Clubs'
     clubid = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), unique = True, nullable=False)
-    createtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    createtime = db.Column(db.DateTime, nullable=False, default=datetime.now())
 
 
 class ClubMembers(db.Model):
@@ -101,14 +101,14 @@ class Notifications(db.Model):
     __tablename__ = 'Notifications'
     notificationid = db.Column(db.Integer, primary_key=True)
     userid = db.Column(db.Integer,ForeignKey('Users.userid'), nullable = False)   
-    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now())
     status = db.Column(EnumType(Notifications_ReadStatus_enum), nullable=False, default = Notifications_ReadStatus_enum.Unread)
 
     # 알림 타입 구분
     notifytype = db.Column(EnumType(Notifications_Types_enum), nullable=False, default = Notifications_Types_enum.rental_fix)
     # 일정 
     rentalid = db.Column(db.Integer,ForeignKey('Rentals.rentalid'), default = None)
-    spaceid = db.Column(db.Integer,ForeignKey('SportsSpace.spaceid'), default = None)  
+    spaceid = db.Column(db.Integer,ForeignKey('Sportsspace.spaceid'), default = None)  
     starttime = db.Column(db.DateTime) 
     endtime = db.Column(db.DateTime)  
     # 친구 
@@ -122,5 +122,5 @@ class Blacklist(db.Model):
     blackid = db.Column(db.Integer, primary_key=True)
     userid = db.Column(db.Integer, ForeignKey('Users.userid', ondelete='CASCADE'))
     reason = db.Column(db.Text) 
-    createtime = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    createtime = db.Column(db.DateTime, nullable=False, default=datetime.now())
 

@@ -7,9 +7,10 @@ from flask_jwt_extended import *
 normals_bp = Blueprint('normals', __name__)
 
 # 관리자제한 일정 추가
-@normals_bp.route('/restrict', methods=['GET'])
+@normals_bp.route('/restrict', methods=['POST'])
 @jwt_required()
 def normals_restrict():
+    methods_update_rentals()
     current_userid = get_jwt_identity()
     data = request.json
 
@@ -27,22 +28,29 @@ def normals_restrict():
     desc = data.get('desc')
 
     rentals = db.session.query(Rentals).filter(
-            Rentals.spaceid == spaceid,
-            _or((Rentals.starttime >= start_datetime,
-            Rentals.starttime <= end_datetime),
-            (Rentals.endtime >= start_datetime,
-            Rentals.endtime <= end_datetime))
+    Rentals.spaceid == spaceid,
+    or_(
+        and_(Rentals.starttime >= starttime, Rentals.starttime <= endtime),
+        and_(Rentals.endtime >= starttime, Rentals.endtime <= endtime)
+    )
     ).all()
 
-    # 일정 취소 및 취소 알림??
+    # 일정 취소 및 취소 알림!!!!
     for rental in rentals :
         rentalparticipants = db.session.query(RentalParticipants).filter(RentalParticipants.rentalid == rental.rentalid).all()
         for rentalparticipant in rentalparticipants :
+            # 알림 #
+            db.session.add(Notifications(userid=rentalparticipant.userid, timestamp=datetime.now(), notifytype=Notifications_Types_enum.rental_cancle, rentalid=rental.rentalid, spaceid=rental.spaceid, starttime=rental.starttime, endtime=rental.endtime))
+            db.session.commit()
+            # 알림 #
             db.session.delete(rentalparticipant)
-        db.session.delete(rental)
+            db.session.commit()
 
+        db.session.delete(rental)
+        db.session.commit()
+    
     # 관리자제한일정 추가
-    restrict = Rentals(spaceid=spaceid, userid=current_userid, starttime=starttime, endtime=endtime, rentaltype=rentaltype, rentalstatus=rentalstatus, rentalflag=rentalflag)
+    restrict = Rentals(spaceid=spaceid, userid=current_userid, starttime=starttime, endtime=endtime, rentaltype=rentaltype, rentalstatus=rentalstatus, rentalflag=rentalflag, desc=desc)
     db.session.add(restrict)
 
     db.session.commit()
@@ -51,7 +59,7 @@ def normals_restrict():
 
 
 # 일반(Student, Clubmanager) | 블랙 명단 조회
-@normals_bp.route('/black', methods=['GET'])
+@normals_bp.route('/black', methods=['POST'])
 @jwt_required()
 def normals_black():
     current_userid = get_jwt_identity()
@@ -78,7 +86,7 @@ def normals_black():
 
 
 # 블랙리스트 명단 추가
-@normals_bp.route('/black/add', methods=['GET'])
+@normals_bp.route('/black/add', methods=['POST'])
 @jwt_required()
 def normals_black_add():
     current_userid = get_jwt_identity()
@@ -89,11 +97,11 @@ def normals_black_add():
 
     user = db.session.query(Users).filter(Users.userid == userid, Users.usertype != Users_UserType_enum.Administrator)
     if not user :
-        return jsonify({'error' : 'User not exist'}), 400
+        return jsonify({'error' : 'User not exist'}), 401
 
-    black = db.session.query(Blacklist).filter(Blacklist.userid == user.userid).first()
+    black = db.session.query(Blacklist).filter(Blacklist.userid == userid).first()
     if black :
-        return jsonify({'error' : 'User already exist in blacklist'}), 400
+        return jsonify({'error' : 'User already exist in blacklist'}), 402
 
     blacklist = Blacklist(userid=userid,reason=reason)
     db.session.add(blacklist)
@@ -103,7 +111,7 @@ def normals_black_add():
 
 
 # 블랙리스트 명단 삭제
-@normals_bp.route('/black/delete', methods=['GET'])
+@normals_bp.route('/black/delete', methods=['POST'])
 @jwt_required()
 def normals_black_delete():
     current_userid = get_jwt_identity()
@@ -113,11 +121,11 @@ def normals_black_delete():
 
     user = db.session.query(Users).filter(Users.userid == userid, Users.usertype != Users_UserType_enum.Administrator)
     if not user :
-        return jsonify({'error' : 'User not exist'}), 400
+        return jsonify({'error' : 'User not exist'}), 401
 
-    black = db.session.query(Blacklist).filter(Blacklist.userid == user.userid).first()
+    black = db.session.query(Blacklist).filter(Blacklist.userid == userid).first()
     if not black :
-        return jsonify({'error' : 'User not exist in blacklist'}), 400
+        return jsonify({'error' : 'User not exist in blacklist'}), 402
 
     db.session.delete(black)
     db.session.commit()

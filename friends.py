@@ -10,7 +10,7 @@ friends_bp = Blueprint('friends', __name__)
 # TODO for frontend :
 # 1. jwt 토큰으로 해당 경로로 요청합니다.
 # 2. 현재 유저의 모든 친구 {name, contact, email} 들을 반환합니다.
-@friends_bp.route('/list', methods=['GET'])
+@friends_bp.route('/list', methods=['POST'])
 @jwt_required()
 def friends_list():
     current_userid = get_jwt_identity()
@@ -43,7 +43,7 @@ def friends_list():
 # TODO for frontend :
 # 1. jwt 토큰으로 해당 경로로 요청합니다.
 # 2. 현재 유저가 받은 친구 요청의 발신자 정보 {name, contact, email} 들을 반환합니다.
-@friends_bp.route('/reqeusts/receive', methods=['GET'])
+@friends_bp.route('/reqeusts/receive', methods=['POST'])
 @jwt_required()
 def friends_requests_receive():
     current_userid = get_jwt_identity()
@@ -66,7 +66,7 @@ def friends_requests_receive():
 
 
 # 받은 친구 요청 수락
-@friends_bp.route('/reqeusts/receive/accept', methods=['GET'])
+@friends_bp.route('/reqeusts/receive/accept', methods=['POST'])
 @jwt_required()
 def friends_requests_receive_accept():
     current_userid = get_jwt_identity()
@@ -84,7 +84,7 @@ def friends_requests_receive_accept():
     request.status = Friends_Status_enum.Accepted
 
     # 알림 #
-    notify = Notifications(userid=user.userid, notifytype=3, friendid=current_userid)
+    notify = Notifications(userid=user.userid, notifytype=Notifications_Types_enum.friend_accept, friendid=current_userid)
     db.session.add(notify)
     # 알림 #
 
@@ -97,7 +97,7 @@ def friends_requests_receive_accept():
 # TODO for frontend :
 # 1. jwt 토큰 + studentid
 # 2. 받은 친구 신청에 대한 거절 처리
-@friends_bp.route('/reqeusts/receive/reject', methods=['GET'])
+@friends_bp.route('/reqeusts/receive/reject', methods=['POST'])
 @jwt_required()
 def friends_requests_receive_reject():
     current_userid = get_jwt_identity()
@@ -115,7 +115,7 @@ def friends_requests_receive_reject():
     request.status = Friends_Status_enum.Rejected
 
     # 알림 #
-    notify = Notifications(userid=user.userid, notifytype=4, friendid=current_userid)
+    notify = Notifications(userid=user.userid, notifytype=Notifications_Types_enum.friend_reject, friendid=current_userid)
     db.session.add(notify)
     # 알림 #
     
@@ -128,7 +128,7 @@ def friends_requests_receive_reject():
 # TODO for frontend :
 # 1. jwt 토큰으로 해당 경로로 요청합니다.
 # 2. 현재 유저가 보낸 친구 요청의 수신자 정보 {name, contact, email} 들을 반환합니다.
-@friends_bp.route('/reqeusts/send', methods=['GET'])
+@friends_bp.route('/reqeusts/send', methods=['POST'])
 @jwt_required()
 def friends_requests_send():
     current_userid = get_jwt_identity()
@@ -154,7 +154,7 @@ def friends_requests_send():
 # TODO for frontend :
 # 1. jwt 토큰 + studentid 
 # 2. 보낸 친구 요청 취소
-@friends_bp.route('/reqeusts/cancle', methods=['GET'])
+@friends_bp.route('/reqeusts/cancle', methods=['POST'])
 @jwt_required()
 def friends_requests_cancle():
     current_userid = get_jwt_identity()
@@ -178,7 +178,7 @@ def friends_requests_cancle():
 
 
 # 친구 요청 
-@friends_bp.route('/reqeusts', methods=['GET'])
+@friends_bp.route('/reqeusts', methods=['POST'])
 @jwt_required()
 def friends_requests():
     current_userid = get_jwt_identity()
@@ -200,7 +200,7 @@ def friends_requests():
 
     # 알림 #
     current_user = Users.query.filter_by(Users.userid == current_userid).first()
-    notify = Notifications(userid = user.userid, notifytype=2, friendid = current_userid)
+    notify = Notifications(userid = user.userid, notifytype=Notifications_Types_enum.friend_request, friendid = current_userid)
     db.session.add(notify)
     # 알림 #
 

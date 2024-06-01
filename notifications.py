@@ -8,23 +8,20 @@ notifications_bp = Blueprint('notifications', __name__)
 
 
 # 유저 공지 조회
-# TODO for frontend :
-# 1. jwt
-# 2. status = 0 : 읽지 않은 상태.
-@notifications_bp.route('/list', methods=['GET'])
+@notifications_bp.route('/list', methods=['POST'])
 @jwt_required()
 def notifications_list():
     current_userid = get_jwt_identity()
     notifications = db.session.query(Notifications).filter(Notifications.userid == current_userid)
-
+    
     notifications_data = []
-    for notification in notificaions :
+    for notification in notifications :
         
         notificationid = notification.notificationid
-        notifytype = notification.notifytype
+        notifytype = notification.notifytype.name
         msg = ""
         timestmap_str = notification.timestamp.strftime('%Y-%m-%d %H:%M:%S')
-        status = notification.status
+        status = notification.status.name
         
         rentalid = notification.rentalid
         spaceid = notification.spaceid
@@ -40,37 +37,34 @@ def notifications_list():
 
         clubid = notification.clubid
         clubname = None
+    
+        if notifytype == 'rental_fix' or notifytype == 'rental_cancle' :
+            sportsspace = db.session.query(SportsSpace).filter(SportsSpace.spaceid == spaceid).first()
+            if not sportsspace :
+                continue
+            spacename = sportsspace.name
+            starttime_str = notification.starttime.strftime('%Y-%m-%d %H:%M:%S')
+            endtime_str = notification.endtime.strftime('%Y-%m-%d %H:%M:%S')
 
-        match notification.notifytype :
-            case 0 | 1 :
-                sportsspace = db.session.query(SportsSpace).filter(SportsSpace.spaceid == spaceid).first()
-                if not sportsspace :
-                    continue
-                spacename = sportsspace.name
-                starttime_str = notification.starttime.strftime('%Y-%m-%d %H:%M:%S')
-                endtime_str = notification.endtime.strftime('%Y-%m-%d %H:%M:%S')
-                break
-            case 2 | 3 | 4 :
-                friend = db.session.query(Users).filter(Users.userid == friendid).first()
-                if not friend :
-                    continue
-                friendstudentid = friend.studentid
-                friendname = friend.name
-                friendcontact = friend.contact
-                friendemail = friend.email
-                break
-            case 5 | 6 | 7 | 8 :
-                club = db.session.query(Clubs).filter(Clubs.clubid == clubid).first()
-                if not club :
-                    continue
-                clubname = club.name
-                break
-            case _ :
-                break
+        elif notifytype == 'friend_request' or notifytype == 'friend_accept' or notifytype == 'friend_reject' :
+            friend = db.session.query(Users).filter(Users.userid == friendid).first()
+            if not friend :
+                continue
+            friendstudentid = friend.studentid
+            friendname = friend.name
+            friendcontact = friend.contact
+            friendemail = friend.email
+         
+        elif notifytype == 'club_member_add' or notifytype == 'club_member_delete' or notifytype == 'club_manager_add' or notifytype == 'club_manager_delete' :
+            club = db.session.query(Clubs).filter(Clubs.clubid == clubid).first()
+            if not club :
+                continue
+            clubname = club.name
+    
 
-        notification_list.append({
+        notifications_data.append({
             'notificationid' : notificationid,
-            'notifytype' : notifytype.name,
+            'notifytype' : notifytype,
             'msg': msg,
             'timestamp': timestmap_str,
             'status': status,
@@ -91,7 +85,7 @@ def notifications_list():
             'clubname' : clubname,
         })
             
-    return jsonify({'notifications' : notification_data}), 200
+    return jsonify({'notifications' : notifications_data}), 200
 
 
 
