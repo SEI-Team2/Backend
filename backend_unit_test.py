@@ -116,6 +116,9 @@ class MyTest(unittest.TestCase):
             self.assertEqual(response.status_code, 400)
             self.assertIn('Invalid date format, should be YYYY-MM-DD', response.json['error'])
 
+            response = self.client.post('/rentals/list', headers=headers, json={'spaceid': 2, 'date': '2024-07-01'})
+            self.assertEqual(response.status_code, 200)
+
             # Test valid request
 
     def test_rentals_join(self):

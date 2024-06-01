@@ -38,7 +38,7 @@ class Friends(db.Model):
 # SoccerField = 2
 class SportsSpace(db.Model):
     __tablename__ = 'Sportsspace'
-    spaceid = db.Column(db.Integer, primary_key=True)
+    spaceid = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(255), nullable=False) 
     minpeople = db.Column(db.Integer, nullable=False)
     maxpeople = db.Column(db.Integer, nullable=False)
