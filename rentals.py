@@ -19,7 +19,7 @@ def rentals_list():
     spaceid = data.get('spaceid')
     date_str = data.get('date')
 
-    if not spaceid or not date_str:
+    if not date_str:
         return jsonify({'error': 'Space ID and date are required'}), 400
 
     # if spaceid did not exist in the database, return error

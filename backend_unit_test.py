@@ -117,6 +117,7 @@ class MyTest(unittest.TestCase):
             self.assertIn('Invalid date format, should be YYYY-MM-DD', response.json['error'])
 
             response = self.client.post('/rentals/list', headers=headers, json={'spaceid': 2, 'date': '2024-07-01'})
+            print(response.json)
             self.assertEqual(response.status_code, 200)
 
             # Test valid request
@@ -264,5 +265,33 @@ class MyTest(unittest.TestCase):
     # normals.py Unnit Test
     # profiles.py Unnit Test
     # notifications.py Unnit Test
+    # schedules.py Unnit Test
+    def test_schedules_list(self):
+        # Create the test user
+        response  = self.client.post('/users/register', json={
+            'sid': '12345678',
+            'name': 'Test User',
+            'contact': '01012345678',
+            'email': 'test@example.com',
+            'password': 'password123',
+            'usertype': 'Student'
+        })
+        self.assertEqual(response.status_code, 200)
+
+        # Get the JWT token for the test user
+        response = self.client.post('/users/login', json={
+            'email': 'test@example.com',
+            'password': 'password123'
+        })
+        self.assertEqual(response.status_code, 200)
+        access_token = response.get_json()['jwt_token']
+
+        # Test the schedules_list endpoint
+        response = self.client.post('/schedules/list', headers ={'Authorization': f'Bearer {access_token}'},json= {
+            'spaceid': 2,
+            'date': '2023-01-01'
+        })
+        print(response.json)
+        self.assertEqual(response.status_code, 200)
 if __name__ == '__main__':
     unittest.main()
