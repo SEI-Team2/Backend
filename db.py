@@ -3,12 +3,14 @@ from sqlalchemy import *
 from enums import *
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.exc import IntegrityError
 
 db = SQLAlchemy()
 
 class Users(db.Model):
     __tablename__ = 'Users'
-    userid = db.Column(db.Integer, primary_key=True)
+    # userid with autoincrement
+    userid = db.Column(db.Integer, primary_key=True, autoincrement=True)
     studentid = db.Column(db.String(255), unique=True, nullable=False) # 학번
     name = db.Column(db.String(255), nullable=False) # 이름
     contact = db.Column(db.String(255), unique=True, nullable=False) # 전화번호
@@ -85,9 +87,21 @@ class RentalParticipants(db.Model):
 
 class Clubs(db.Model):
     __tablename__ = 'Clubs'
-    clubid = db.Column(db.Integer, primary_key=True)
+    clubid = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(255), unique = True, nullable=False)
     createtime = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    @classmethod
+    def get_or_create(cls, name):
+        club = cls.query.filter_by(name=name).first()
+        if not club:
+            club = cls(name=name)
+            db.session.add(club)
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                club = cls.query.filter_by(name=name).first()
+        return club
 
 
 class ClubMembers(db.Model):

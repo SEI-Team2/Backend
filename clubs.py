@@ -198,25 +198,31 @@ def clubs_clubregular_add():
     endtime_str = data.get('endtime')
     nums = data.get('nums')
 
+    # 입력값 확인
     try:
         starttime = datetime.strptime(starttime_str, '%H:%M:%S').time()
         endtime = datetime.strptime(endtime_str, '%H:%M:%S').time()
     except ValueError:
         return jsonify({'error': 'Invalid time format, expected HH:MM:SS'}), 401
-    if not(1 <= spaceid <= 3) :
-        return jsonify({'error': 'Invalid spaceid'}), 402
+    
     if not (0 <= dayofweek <= 6):
         return jsonify({'error': 'Invalid dayofweek'}), 403
     if not nums :
         nums = 20
-
+    # club id에 해당하는 동아리가 있는지 조회 -> 없음 생성
+    club = db.session.query(Clubs).filter(Clubs.clubid == clubid).first()
+    if not club :
+        # 없으면 동아리 생성
+        club = Clubs(clubid = clubid, name = 'Club' + str(clubid))
+    # 운동공간 탐색
     sportsspace = db.session.query(SportsSpace).filter(SportsSpace.spaceid == spaceid).first()
     if not sportsspace :
         return jsonify({'error': 'Invalid spaceid'}), 404
+    
+    # 클럽 정기일정 추가
     clubregular = ClubRegulars(clubid = clubid, spaceid = spaceid, dayofweek = dayofweek, starttime = starttime, endtime = endtime)
     db.session.add(clubregular)
     db.session.commit()
-
     # 다가올 X요일 탐색
     today = datetime.today()
     days_ahead = dayofweek - today.weekday()

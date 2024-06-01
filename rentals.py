@@ -22,7 +22,9 @@ def rentals_list():
     if not spaceid or not date_str:
         return jsonify({'error': 'Space ID and date are required'}), 400
 
-    if not (1 <= spaceid and spaceid <= 3) :
+    # if spaceid did not exist in the database, return error
+    space = db.session.query(SportsSpace).filter(SportsSpace.spaceid == spaceid).first()
+    if not space:
         return jsonify({'error': 'Space ID is invalid'}), 400
 
     try:
@@ -179,8 +181,10 @@ def rentals_create():
     friends = data.get('friends',[])
 
     # spaceid 검사
-    if not (1 <= spaceid <= 3) :
-        return jsonify({'error': 'Invalid spaceid'}), 400
+    # if spaceid did not exist in the database, return error
+    space = db.session.query(SportsSpace).filter(SportsSpace.spaceid == spaceid).first()
+    if not space:
+        return jsonify({'error': 'Space ID is invalid'}), 400
     
     # time 검사
     if starttime >= endtime :

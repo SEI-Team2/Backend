@@ -20,9 +20,12 @@ def schedules_list():
     if not spaceid or not date_str:
         return jsonify({'error': 'Space ID and date are required'}), 400
 
-    if not (1 <= spaceid <= 3) :
+    # if spaceid did not exist in the database, return error
+    space = db.session.query(SportsSpace).filter(SportsSpace.spaceid == spaceid).first()
+    if not space:
         return jsonify({'error': 'Space ID is invalid'}), 400
-
+    
+    # if date_str is not in the format of YYYY-MM-DD, return error
     try:
         date = datetime.strptime(date_str, '%Y-%m-%d')
     except ValueError:

@@ -19,12 +19,16 @@ def users_register():
     if not studentid or not name or not contact or not email or not password:
         return jsonify({'error': 'Please provide both username and email'}), 400
     
+    # Validate usertype
+    if usertype not in Users_UserType_enum.__members__:
+        return jsonify({'error': 'Invalid usertype'}), 401
+    
     user = Users.query.filter_by(studentid = studentid).first()
 
     if user :
         return jsonify({'error': 'User already exists'}), 400 
     else :
-        user = Users(studentid = studentid, name=name, contact=contact, email=email)
+        user = Users(studentid = studentid, name=name, contact=contact, email=email, usertype=Users_UserType_enum[usertype])
         user.set_password(password)
         
         db.session.add(user)

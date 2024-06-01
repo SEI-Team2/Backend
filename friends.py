@@ -16,14 +16,14 @@ def friends_list():
     current_userid = get_jwt_identity()
     data = request.json
 
-    friends1 = Friends.query.filter_by(Friends.userid1 == current_userid, Friends.status == Accepted).all()
-    friends2 = Friends.query.filter_by(Friends.userid2 == current_userid, Friends.status == Accepted).all()
+    friends1 = db.session.query(Friends).filter(Friends.userid1 == current_userid, Friends.status == Friends_Status_enum.Accepted).all()
+    friends2 = db.session.query(Friends).filter(Friends.userid2 == current_userid, Friends.status == Friends_Status_enum.Accepted).all()
 
     friends_id = set()
     for friend1 in friends1 :
         friends_id.add(friend1.userid2)
     for friend2 in friends2 :
-        friends_id.add(friend1.userid1)
+        friends_id.add(friend2.userid1)
     
     friends = []
     for friend_id in friends_id :
@@ -49,7 +49,7 @@ def friends_requests_receive():
     current_userid = get_jwt_identity()
     data = request.json
     
-    requests = Friends.query.filter_by(Friends.userid2 == current_userid, Friends.status == Pending).all()
+    requests = Friends.query.filter_by(Friends.userid2 == current_userid, Friends.status == Friends_Status_enum.Pending).all()
     
     requests_data = []
     for request in requests :
@@ -78,7 +78,7 @@ def friends_requests_receive_accept():
     if not user :
             return jsonify({"error" : "Studentid not exist" }), 400
 
-    request = db.session.query(Friends).filter_by(Friends.userid1 == user.userid, Friends.userid2 == current_userid, Friends.status == Pending).first()
+    request = db.session.query(Friends).filter_by(Friends.userid1 == user.userid, Friends.userid2 == current_userid, Friends.status == Friends_Status_enum.Pending).first()
     if not request:
         return jsonify({"error" : "Request not exist" }), 400
     request.status = Friends_Status_enum.Accepted
@@ -109,7 +109,7 @@ def friends_requests_receive_reject():
     if not user :
             return jsonify({"error" : "Studentid not exist" }), 400
 
-    request = db.session.query(Friends).filter_by(Friends.userid1 == user.userid, Friends.userid2 == current_userid, Friends.status == Pending).first()
+    request = db.session.query(Friends).filter_by(Friends.userid1 == user.userid, Friends.userid2 == current_userid, Friends.status == Friends_Status_enum.Pending).first()
     if not request:
         return jsonify({"error" : "Request not exist" }), 400
     request.status = Friends_Status_enum.Rejected
@@ -181,25 +181,24 @@ def friends_requests_cancle():
 @friends_bp.route('/reqeusts', methods=['POST'])
 @jwt_required()
 def friends_requests():
-    current_userid = get_jwt_identity()
+    current_userid = get_jwt_identity() # 보내는 사람
     data = request.json
 
-    studentid = data.get('studentid')
+    studentid = data.get('studentid') # 친구 요청할 학번 (받는 사람)
     
-    user = Users.query.filter_by(Users.studentid == studentid).first()
+    user = Users.query.filter_by(Users.studentid == studentid).first() # 친구 요청받을 유저
     if not user :
         return jsonify({'error' : "Studentid not exist" }), 400 
 
-    already = Friends.query.filter_by(Friends.userid1 == current_userid, Friends.userid2 == userid).all()
+    already = Friends.query.filter_by(Friends.userid1 == current_userid, Friends.userid2 == studentid).all()
     if already :
         return jsonify({'error' : "Already requested" }), 400   
 
-    friend = Friends(userid1 = current_userid, userid2 = userid, status = Pending)
+    friend = Friends(userid1 = current_userid, userid2 = studentid, status = Friends_Status_enum.Pending)
     
     db.session.add(friend)
 
     # 알림 #
-    current_user = Users.query.filter_by(Users.userid == current_userid).first()
     notify = Notifications(userid = user.userid, notifytype=Notifications_Types_enum.friend_request, friendid = current_userid)
     db.session.add(notify)
     # 알림 #
