@@ -38,7 +38,6 @@ def clubs_clubs():
     return jsonify(clubs_data), 200
 
 
-
 # 동아리 관리자 명단 조회
 @clubs_bp.route('/clubmanagers', methods=['GET'])
 @jwt_required()
@@ -216,7 +215,7 @@ def clubs_clubregular():
             'clubregularid' : clubregular.clubregularid,
             'clubid' : club.clubid,
             'clubname' : club.name,
-            'spaceid' : club.spaceid,
+            'spaceid' : clubregular.spaceid,
             'dayofweek' : clubregular.dayofweek,
             'starttime' : clubregular.starttime.strftime('%H:%M:%S'),
             'endtime' : clubregular.endtime.strftime('%H:%M:%S'),
@@ -248,7 +247,7 @@ def clubs_clubregular_add():
         endtime = datetime.strptime(endtime_str, '%H:%M:%S').time()
     except ValueError:
         return jsonify({'error': 'Invalid time format, expected HH:MM:SS'}), 401
-    
+
     if not (0 <= dayofweek <= 6):
         return jsonify({'error': 'Invalid dayofweek'}), 403
     if not nums :
@@ -264,7 +263,7 @@ def clubs_clubregular_add():
     sportsspace = db.session.query(SportsSpace).filter(SportsSpace.spaceid == spaceid).first()
     if not sportsspace :
         return jsonify({'error': 'Invalid spaceid'}), 404
-    
+
     # 클럽 정기일정 추가
     clubregular = ClubRegulars(clubid = clubid, spaceid = spaceid, dayofweek = dayofweek, starttime = starttime, endtime = endtime)
     db.session.add(clubregular)
@@ -287,13 +286,19 @@ def clubs_clubregular_add():
             continue
 
         # 기존 일정이 있는지 확인
-        rentals = db.session.query(Rentals).filter(
-        Rentals.spaceid == spaceid,
-        or_(
-            and_(Rentals.starttime >= start_datetime, Rentals.starttime <= end_datetime),
-            and_(Rentals.endtime >= start_datetime, Rentals.endtime <= end_datetime)
+        rentals = (
+            db.session.query(Rentals)
+            .filter(
+                Rentals.spaceid == spaceid,
+                or_(
+                    and_(Rentals.starttime > starttime, Rentals.starttime < endtime),
+                    and_(Rentals.endtime > starttime, Rentals.endtime < endtime),
+                    and_(Rentals.starttime < starttime, Rentals.endtime > endtime),
+                    and_(Rentals.starttime > starttime, Rentals.endtime < endtime),
+                ),
+            )
+            .all()
         )
-        ).all()
         if rentals :
             continue
 
@@ -317,7 +322,7 @@ def clubs_clubregular_add():
             rentalflag=Rentals_Flags_enum.Nonfix,  
             
         )
-        
+
         cnt += 1
         db.session.add(new_rental)
         db.session.commit()
@@ -365,5 +370,3 @@ def clubs_clubregular_delete():
     db.session.commit()
 
     return jsonify({}), 200
-
-

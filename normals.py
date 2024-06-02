@@ -15,7 +15,7 @@ def normals_restrict():
     data = request.json
 
     spaceid = data.get('spaceid')
-    
+
     starttime_str = data.get('starttime')
     starttime = datetime.strptime(starttime_str, '%Y-%m-%d %H:%M:%S')
     endtime_str = data.get('endtime')
@@ -27,20 +27,36 @@ def normals_restrict():
 
     desc = data.get('desc')
 
-    rentals = db.session.query(Rentals).filter(
-    Rentals.spaceid == spaceid,
-    or_(
-        and_(Rentals.starttime >= starttime, Rentals.starttime <= endtime),
-        and_(Rentals.endtime >= starttime, Rentals.endtime <= endtime)
+    rentals = (
+        db.session.query(Rentals)
+        .filter(
+            Rentals.spaceid == spaceid,
+            or_(
+                and_(Rentals.starttime > starttime, Rentals.starttime < endtime),
+                and_(Rentals.endtime > starttime, Rentals.endtime < endtime),
+                and_(Rentals.starttime < starttime, Rentals.endtime > endtime),
+                and_(Rentals.starttime > starttime, Rentals.endtime < endtime),
+            ),
+        )
+        .all()
     )
-    ).all()
 
     # 일정 취소 및 취소 알림!!!!
     for rental in rentals :
         rentalparticipants = db.session.query(RentalParticipants).filter(RentalParticipants.rentalid == rental.rentalid).all()
         for rentalparticipant in rentalparticipants :
             # 알림 #
-            db.session.add(Notifications(userid=rentalparticipant.userid, timestamp=datetime.now(), notifytype=Notifications_Types_enum.rental_cancle, rentalid=rental.rentalid, spaceid=rental.spaceid, starttime=rental.starttime, endtime=rental.endtime))
+            db.session.add(
+                Notifications(
+                    userid=rentalparticipant.participantid,
+                    timestamp=datetime.now(),
+                    notifytype=Notifications_Types_enum.rental_cancle,
+                    rentalid=rental.rentalid,
+                    spaceid=rental.spaceid,
+                    starttime=rental.starttime,
+                    endtime=rental.endtime,
+                )
+            )
             db.session.commit()
             # 알림 #
             db.session.delete(rentalparticipant)
@@ -48,7 +64,7 @@ def normals_restrict():
 
         db.session.delete(rental)
         db.session.commit()
-    
+
     # 관리자제한일정 추가
     restrict = Rentals(spaceid=spaceid, userid=current_userid, starttime=starttime, endtime=endtime, rentaltype=rentaltype, rentalstatus=rentalstatus, rentalflag=rentalflag, desc=desc)
     db.session.add(restrict)

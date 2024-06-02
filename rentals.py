@@ -196,8 +196,10 @@ def rentals_create():
     rental = db.session.query(Rentals).filter(
     Rentals.spaceid == spaceid,
     or_(
-        and_(Rentals.starttime >= starttime, Rentals.starttime <= endtime),
-        and_(Rentals.endtime >= starttime, Rentals.endtime <= endtime)
+        and_(Rentals.starttime > starttime, Rentals.starttime < endtime),
+        and_(Rentals.endtime > starttime, Rentals.endtime < endtime),
+        and_(Rentals.starttime < starttime, Rentals.endtime > endtime),
+        and_(Rentals.starttime > starttime, Rentals.endtime < endtime)
     )
     ).first()
     if rental :
