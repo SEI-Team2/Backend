@@ -50,7 +50,7 @@ def methods_update_rentals( ) :
         
         ## 일반 대여 일정인 경우 ##
         else :
-            if datetime.now() < rental.starttime - timedelta(hours=72):
+            if datetime.now() < rental.starttime - timedelta(hours=1):
                 if rental.people >= rental.maxpeople : # 최대인원 이상이면 확정
                     rental.rentalstatus = Rentals_Status_enum.Close
                     rental.rentalflag = Rentals_Flags_enum.Fix
