@@ -18,11 +18,10 @@ def clubs_clubid(clubname):
 
 
 # 동아리 목록 조회
-@clubs_bp.route('/clubs', methods=['POST'])
+@clubs_bp.route('/clubs', methods=['GET'])
 @jwt_required()
 def clubs_clubs():
     current_userid = get_jwt_identity()
-    data = request.json
 
     clubs =  db.session.query(Clubs).all()
 
@@ -41,11 +40,10 @@ def clubs_clubs():
 
 
 # 동아리 관리자 명단 조회
-@clubs_bp.route('/clubmanagers', methods=['POST'])
+@clubs_bp.route('/clubmanagers', methods=['GET'])
 @jwt_required()
 def clubs_clubmanagers():
     current_userid = get_jwt_identity()
-    data = request.json
 
     clubmanagers = db.session.query(ClubMembers).filter(ClubMembers.role == Clubmembers_Role_enum.Manager).all()
     if not clubmanagers :
@@ -195,11 +193,10 @@ def clubs_clubmanagers_add():
 
 
 # 동아리 정기 일정 목록
-@clubs_bp.route('/clubregular', methods=['POST'])
+@clubs_bp.route('/clubregular', methods=['GET'])
 @jwt_required()
 def clubs_clubregular():
     current_userid = get_jwt_identity()
-    data = request.json
     
     clubregulars = db.session.query(ClubRegulars).all()
     

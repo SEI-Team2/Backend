@@ -122,7 +122,6 @@ def friends_requests_receive_reject():
 @jwt_required()
 def friends_requests_send():
     current_userid = get_jwt_identity()
-    data = request.json
     
     friends = db.session.query(Friends).filter(Friends.userid1 == current_userid, Friends.status != Friends_Status_enum.Accepted).all()
     
