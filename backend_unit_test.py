@@ -531,7 +531,7 @@ class MyTest(unittest.TestCase):
         headers = {'Authorization': f'Bearer {access_token}'}
 
         # Test the notifications_list endpoint
-        response = self.client.post('/notifications/list', headers=headers)
+        response = self.client.get('/notifications/list', headers=headers)
         self.assertEqual(response.status_code, 200)
 
     # schedules.py Unnit Test
