@@ -70,7 +70,7 @@ def methods_update_rentals( ) :
 def methods_init_datas() :
 
     users = [
-        Users(studentid='12345', name='han', contact='111212', email='email1',usertype=Users_UserType_enum.Administrator),
+        Users(studentid='0000000000', name='admin', contact='01012341234', email='admin',usertype=Users_UserType_enum.Administrator),
         Users(studentid='23451', name='qan', contact='121212', email='email2',usertype=Users_UserType_enum.Student),
         Users(studentid='34512', name='wan', contact='131212', email='email3',usertype=Users_UserType_enum.Student),
         Users(studentid='45123', name='ean', contact='141212', email='email4',usertype=Users_UserType_enum.Clubmanager),
@@ -107,6 +107,8 @@ def methods_init_datas() :
     if not check :
         for user in users :
             user.set_password('password123')
+            if user.name == 'admin':
+                user.set_password('admin')
             db.session.add(user)
             db.session.commit()    
 

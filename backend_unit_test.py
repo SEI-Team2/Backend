@@ -343,8 +343,8 @@ class MyTest(unittest.TestCase):
     def test_noramls_restrict(self):
         # Get the JWT token for the admin user
         response = self.client.post('/users/login', json={
-            'email': 'email1',
-            'password': 'password123'
+            'email': 'admin',
+            'password': 'admin'
         })
         self.assertEqual(response.status_code, 200)
         access_token = response.get_json()['jwt_token']
@@ -362,8 +362,8 @@ class MyTest(unittest.TestCase):
     def test_noramls_black(self):
         # Get the JWT token for the admin user
         response = self.client.post('/users/login', json={
-            'email': 'email1',
-            'password': 'password123'
+            'email': 'admin',
+            'password': 'admin'
         })
         self.assertEqual(response.status_code, 200)
         access_token = response.get_json()['jwt_token']
@@ -376,8 +376,8 @@ class MyTest(unittest.TestCase):
     def test_noramls_black_add(self):
         # Get the JWT token for the admin user
         response = self.client.post('/users/login', json={
-            'email': 'email1',
-            'password': 'password123'
+            'email': 'admin',
+            'password': 'admin'
         })
         self.assertEqual(response.status_code, 200)
         access_token = response.get_json()['jwt_token']
