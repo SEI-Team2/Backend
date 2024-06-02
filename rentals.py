@@ -257,7 +257,7 @@ def rentals_delete():
     for rentalparticipant in rentalparticipants :
         notify_users.append(rentalparticipant.participantid)
         db.session.delete(rentalparticipant)
-        db.sessoion.commit()
+        db.session.commit()
     
     # 알림 #
     for notify_user in notify_users :

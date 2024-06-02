@@ -73,8 +73,8 @@ def methods_init_datas() :
         Users(studentid='12345', name='han', contact='111212', email='email1',usertype=Users_UserType_enum.Administrator),
         Users(studentid='23451', name='qan', contact='121212', email='email2',usertype=Users_UserType_enum.Student),
         Users(studentid='34512', name='wan', contact='131212', email='email3',usertype=Users_UserType_enum.Student),
-        Users(studentid='45123', name='ean', contact='141212', email='email4',usertype=Users_UserType_enum.Student),
-        Users(studentid='51234', name='ran', contact='151212', email='email5',usertype=Users_UserType_enum.Student)
+        Users(studentid='45123', name='ean', contact='141212', email='email4',usertype=Users_UserType_enum.Clubmanager),
+        Users(studentid='51234', name='ran', contact='151212', email='email5',usertype=Users_UserType_enum.Clubmanager)
     ]
 
 
@@ -92,8 +92,8 @@ def methods_init_datas() :
     ]
 
     clubmembers = [
-        #ClubMembers(userid =1, clubid=1, role = Clubmembers_Role_enum.Member),
-        #ClubMembers(userid =2, clubid=2, role = Clubmembers_Role_enum.Member),
+        ClubMembers(userid =4, clubid=1, role = Clubmembers_Role_enum.Manager),
+        ClubMembers(userid =5, clubid=2, role = Clubmembers_Role_enum.Manager)
         #ClubMembers(userid =3, clubid=3, role = Clubmembers_Role_enum.Member),
         #ClubMembers(userid =4, clubid=4, role = Clubmembers_Role_enum.Member).
     ]
@@ -106,7 +106,7 @@ def methods_init_datas() :
     check = db.session.query(Users).all()
     if not check :
         for user in users :
-            user.set_password('1111')
+            user.set_password('password123')
             db.session.add(user)
             db.session.commit()    
 
@@ -118,4 +118,9 @@ def methods_init_datas() :
     check = db.session.query(Clubs).all()
     if not check :
         db.session.add_all(clubs)
+        db.session.commit()
+
+    check = db.session.query(ClubMembers).all()
+    if not check :
+        db.session.add_all(clubmembers)
         db.session.commit()

@@ -7,11 +7,10 @@ from flask_jwt_extended import *
 profiles_bp = Blueprint('profiles', __name__)
 
 # 유저 정보
-@profiles_bp.route('/user', methods=['POST'])
+@profiles_bp.route('/user', methods=['GET'])
 @jwt_required()
 def profiles_user():
     current_userid = get_jwt_identity()
-    data = request.json
 
     user = db.session.query(Users).filter(Users.userid == current_userid).first()
 
@@ -23,12 +22,11 @@ def profiles_user():
 
 
 # 유저 참여 일정 조회
-@profiles_bp.route('/schedules', methods=['POST'])
+@profiles_bp.route('/schedules', methods=['GET'])
 @jwt_required()
 def profiles_schedules():
     methods_update_rentals()
     current_userid = get_jwt_identity()
-    data = request.json
 
     rentalparticipants = db.session.query(RentalParticipants).filter(RentalParticipants.participantid == current_userid).all()
     if not rentalparticipants :
@@ -67,11 +65,10 @@ def profiles_schedules():
 
 
 # 동아리원 목록 조회
-@profiles_bp.route('/clubmembers/list', methods=['POST'])
+@profiles_bp.route('/clubmembers/list', methods=['GET'])
 @jwt_required()
 def profiles_clubmembers_list():
     current_userid = get_jwt_identity()
-    data = request.json
     
     # 어느 동아리 회장인지 탐색
     clubmanager = db.session.query(ClubMembers).filter(ClubMembers.userid == current_userid, ClubMembers.role == Clubmembers_Role_enum.Manager).first()     
@@ -151,7 +148,7 @@ def profiles_clubmembers_add():
 @jwt_required()
 def profiles_clubmembers_delete():
     current_userid = get_jwt_identity()
-    datas = request.json
+    data = request.json
 
     studentid = data.get('studentid')
 
@@ -171,7 +168,7 @@ def profiles_clubmembers_delete():
         return jsonify({'error': 'User not exist'}), 403
 
     # 유저가 이미 동아리에 있는지 확인
-    clubmember = db.session.query(ClubMembers).filter(ClubMembers.userid == user.userid, ClubMembers.clubid == club.clubid, ClubMembers.roll == Clubmembers_Role_enum.Member).first()
+    clubmember = db.session.query(ClubMembers).filter(ClubMembers.userid == user.userid, ClubMembers.clubid == club.clubid, ClubMembers.role == Clubmembers_Role_enum.Member).first()
     if not clubmember :
         return jsonify({'error': 'User not exist in clubmember or manager'}), 404
     

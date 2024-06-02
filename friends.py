@@ -7,11 +7,10 @@ from flask_jwt_extended import *
 friends_bp = Blueprint('friends', __name__)
 
 # 친구 목록 조회
-@friends_bp.route('/list', methods=['POST'])
+@friends_bp.route('/list', methods=['GET'])
 @jwt_required()
 def friends_list():
     current_userid = get_jwt_identity()
-    data = request.json
 
     friends1 = db.session.query(Friends).filter(Friends.userid1 == current_userid, Friends.status == Friends_Status_enum.Accepted).all()
     friends2 = db.session.query(Friends).filter(Friends.userid2 == current_userid, Friends.status == Friends_Status_enum.Accepted).all()
@@ -39,11 +38,10 @@ def friends_list():
 
 
 # 받은 친구 요청 목록 조회
-@friends_bp.route('/requests/receive', methods=['POST'])
+@friends_bp.route('/requests/receive', methods=['GET'])
 @jwt_required()
 def friends_requests_receive():
     current_userid = get_jwt_identity()
-    data = request.json
     
     friends = db.session.query(Friends).filter(Friends.userid2 == current_userid, Friends.status == Friends_Status_enum.Pending).all()
     

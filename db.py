@@ -46,7 +46,7 @@ class SportsSpace(db.Model):
 
 class Rentals(db.Model):
     __tablename__ = 'Rentals'
-    rentalid = db.Column(db.Integer, primary_key=True)
+    rentalid = db.Column(db.Integer, primary_key=True, autoincrement=True)
     spaceid = db.Column(db.Integer, nullable=False)  
     userid = db.Column(db.Integer, nullable=False) 
 

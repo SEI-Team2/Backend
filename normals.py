@@ -59,11 +59,10 @@ def normals_restrict():
 
 
 # 일반(Student, Clubmanager) | 블랙 명단 조회
-@normals_bp.route('/black', methods=['POST'])
+@normals_bp.route('/black', methods=['GET'])
 @jwt_required()
 def normals_black():
     current_userid = get_jwt_identity()
-    data = request.json
     
     users = db.session.query(Users).filter(Users.usertype != Users_UserType_enum.Administrator).all()
 
