@@ -176,7 +176,7 @@ def rentals_create():
     starttime = datetime.strptime(starttime_str, '%Y-%m-%d %H:%M:%S')
     endtime_str = data.get('endtime')
     endtime = datetime.strptime(endtime_str, '%Y-%m-%d %H:%M:%S')
-    maxpeople = data.get('maxpeople')
+    maxpeople = int(data.get('maxpeople'))
     desc = data.get('desc')
     friends = data.get('friends',[])
 

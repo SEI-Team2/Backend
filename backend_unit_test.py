@@ -263,7 +263,16 @@ class MyTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)  # Expect a 404 Not Found response
 
     # normals.py Unnit Test
+    def test_noramls_restrict(self):
+        pass
+    def test_noramls_black(self):
+        pass
+    def test_noramls_black_add(self):
+        pass
+    def test_noramls_black_delete(self):
+        pass
     # profiles.py Unnit Test
+    
     # notifications.py Unnit Test
     # schedules.py Unnit Test
     def test_schedules_list(self):
