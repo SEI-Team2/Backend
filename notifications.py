@@ -87,6 +87,26 @@ def notifications_list():
             
     return jsonify({'notifications' : notifications_data}), 200
 
+# 유저 공지 읽음 처리
+@notifications_bp.route('/read', methods=['POST'])
+@jwt_required()
+def notifications_read():
+    current_userid = get_jwt_identity()
+    data = request.json
+    notificationid = data.get('notificationid')
+    
+    if not notificationid :
+        return jsonify({'error': 'Notification ID are required'}), 400
+    
+    notification = db.session.query(Notifications).filter(Notifications.notificationid == notificationid, Notifications.userid == current_userid).first()
+    
+    if not notification :
+        return jsonify({'error': 'Notification is not exist'}), 401
+    
+    notification.status = Notifications_ReadStatus_enum.Read
+    db.session.commit()
+    
+    return jsonify({'message': 'Notification read successfully'}), 200
 
 
     
