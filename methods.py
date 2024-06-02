@@ -70,13 +70,56 @@ def methods_update_rentals( ) :
 def methods_init_datas() :
 
     users = [
-        Users(studentid='0000000000', name='admin', contact='01012341234', email='admin',usertype=Users_UserType_enum.Administrator),
-        Users(studentid='23451', name='qan', contact='121212', email='email2',usertype=Users_UserType_enum.Student),
-        Users(studentid='34512', name='wan', contact='131212', email='email3',usertype=Users_UserType_enum.Student),
-        Users(studentid='45123', name='ean', contact='141212', email='email4',usertype=Users_UserType_enum.Clubmanager),
-        Users(studentid='51234', name='ran', contact='151212', email='email5',usertype=Users_UserType_enum.Clubmanager)
+        Users(
+            studentid="0000000000",
+            name="admin",
+            contact="01012341234",
+            email="admin",
+            usertype=Users_UserType_enum.Administrator,
+        ),
+        Users(
+            studentid="23451",
+            name="qan",
+            contact="121212",
+            email="email2",
+            usertype=Users_UserType_enum.Student,
+        ),
+        Users(
+            studentid="34512",
+            name="wan",
+            contact="131212",
+            email="email3",
+            usertype=Users_UserType_enum.Student,
+        ),
+        Users(
+            studentid="45123",
+            name="ean",
+            contact="141212",
+            email="email4",
+            usertype=Users_UserType_enum.Clubmanager,
+        ),
+        Users(
+            studentid="51234",
+            name="ran",
+            contact="151212",
+            email="email5",
+            usertype=Users_UserType_enum.Clubmanager,
+        ),
+        Users(
+            studentid="2018311320",
+            name="권우진",
+            contact="01014351433",
+            email="wojin57@g.skku.edu",
+            usertype=Users_UserType_enum.Student,
+        ),
+        Users(
+            studentid="2021317502",
+            name="박성준",
+            contact="0101241154",
+            email="sj2park@g.skku.edu",
+            usertype=Users_UserType_enum.Student,
+        ),
     ]
-
 
     sportspaces = [
         SportsSpace(spaceid=0,name='TennisCourt', minpeople=8, maxpeople=16),
@@ -109,6 +152,10 @@ def methods_init_datas() :
             user.set_password('password123')
             if user.name == 'admin':
                 user.set_password('admin')
+            if user.name == '권우진':
+                user.set_password("Skkports")
+            if user.name == '박성준':
+                user.set_password("asdfgh")
             db.session.add(user)
             db.session.commit()    
 
@@ -116,7 +163,7 @@ def methods_init_datas() :
     if not check :
         db.session.add_all(sportspaces)
         db.session.commit()
-    
+
     check = db.session.query(Clubs).all()
     if not check :
         db.session.add_all(clubs)
