@@ -8,7 +8,7 @@ notifications_bp = Blueprint('notifications', __name__)
 
 
 # 유저 공지 조회
-@notifications_bp.route('/list', methods=['POST'])
+@notifications_bp.route('/list', methods=['GET'])
 @jwt_required()
 def notifications_list():
     current_userid = get_jwt_identity()
