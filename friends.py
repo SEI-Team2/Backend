@@ -166,7 +166,7 @@ def friends_requests_cancle():
     return jsonify({}), 200
 
 
-# 친구 요청 
+# 친구 요청
 @friends_bp.route('/requests', methods=['POST'])
 @jwt_required()
 def friends_requests():
@@ -196,5 +196,34 @@ def friends_requests():
 
     return jsonify({}), 200
 
+# 친구 삭제
+@friends_bp.route('/delete', methods=['POST'])
+@jwt_required()
+def friends_delete():
+    current_userid = get_jwt_identity()
+    data = request.json
 
+    studentid = data.get('studentid')
 
+    user = db.session.query(Users).filter(Users.studentid == studentid).first()
+    if not user :
+        return jsonify({'error' : "Studentid not exist" }), 400
+
+    friend = (
+        db.session.query(Friends)
+        .filter(
+            or_(
+                and_(Friends.userid1 == current_userid, Friends.userid2 == user.userid),
+                and_(Friends.userid1 == user.userid, Friends.userid2 == current_userid),
+            ),
+            Friends.status == Friends_Status_enum.Accepted,
+        )
+        .first()
+    )
+    if not friend :
+        return jsonify({'error' : "Friend not exist" }), 401
+
+    db.session.delete(friend)
+    db.session.commit()
+
+    return jsonify({}), 200

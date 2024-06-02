@@ -6,6 +6,17 @@ from flask_jwt_extended import *
 
 clubs_bp = Blueprint('clubs', __name__)
 
+# 동아리 Club ID 조회 (동아리 이름 활용) GET API
+@clubs_bp.route('/clubid/<clubname>', methods=['GET'])
+@jwt_required()
+def clubs_clubid(clubname):
+    current_userid = get_jwt_identity()
+    club = db.session.query(Clubs).filter(Clubs.name == clubname).first()
+    if not club :
+        return jsonify({"error" : "Club not exist" }), 400
+    return jsonify({'clubid' : club.clubid}), 200
+
+
 # 동아리 목록 조회
 @clubs_bp.route('/clubs', methods=['POST'])
 @jwt_required()
@@ -101,6 +112,39 @@ def clubs_clubmanagers_delete():
 
     return jsonify({}), 200
 
+# 동아리 생성(동아리 스포츠 타입, 동아리 이름, 동아리 회장 학번)
+@clubs_bp.route('/create', methods=['POST'])
+@jwt_required()
+def clubs_create():
+    current_userid = get_jwt_identity()
+    data = request.json
+
+    clubid = data.get('clubid')
+    name = data.get('name')
+    presidentid = data.get('presidentid')
+
+    # club 탐색
+    club = db.session.query(Clubs).filter(Clubs.clubid == clubid).first()
+    if club :
+        return jsonify({"error" : "Club already exist" }), 400
+
+    # user 탐색
+    user = db.session.query(Users).filter(Users.studentid == presidentid).first()
+    if not user:
+        return jsonify({"error" : "Studentid not exist" }), 401
+    if user.usertype != Users_UserType_enum.Student :
+        return jsonify({"error" : "Not student" }), 402
+
+    # 동아리 생성
+    club = Clubs(clubid = clubid, name = name)
+    db.session.add(club)
+    db.session.commit()
+
+    # 동아리 회장 추가
+    db.session.add(ClubMembers(userid = user.userid, clubid = club.clubid, role = Clubmembers_Role_enum.Manager))
+    db.session.commit()
+
+    return jsonify({}), 200
 
 # 동아리 관리자 추가
 @clubs_bp.route('/clubmanagers/add', methods=['POST'])

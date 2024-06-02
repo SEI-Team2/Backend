@@ -56,3 +56,4 @@ def users_login():
     # 로그인 성공 : JWT 발급
     access_token = create_access_token(identity=user.userid)
     return jsonify({'jwt_token' : access_token}), 200
+

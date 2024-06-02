@@ -181,6 +181,11 @@ class MyTest(unittest.TestCase):
 
         # Accept the friend request
         response = self.client.post('/friends/requests/receive/accept', headers=headers,json={'studentid': '12345678'})
+        self.assertEqual(response.status_code, 200)
+
+        # Delete the friend
+        response = self.client.post('/friends/delete', headers=headers, json={'studentid': '12345678'})
+        self.assertEqual(response.status_code, 200)
 
     # rentals.py Unnit Test
     def test_rentals_list(self):
@@ -203,7 +208,6 @@ class MyTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         access_token = response.get_json()['jwt_token']
 
-        
         # Test invalid spaceid
         response = self.client.post('/rentals/list', headers={'Authorization': f'Bearer {access_token}'}, json={'spaceid': 4, 'date': '2023-01-01'})
         self.assertEqual(response.status_code, 400)
@@ -252,7 +256,7 @@ class MyTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         access_token = response.get_json()['jwt_token']
         headers = {'Authorization': f'Bearer {access_token}','Content-Type': 'application/json'}
-        
+
         # Test missing rentalid
         response = self.client.post('/rentals/join', headers=headers, json={})
         self.assertEqual(response.status_code, 401)
@@ -308,6 +312,23 @@ class MyTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     # clubs.py Unnit Test
+    # 동아리 Club ID 조회 Unit Test
+    def test_clubs_list(self):
+        # Get the JWT token for the admin user
+        response = self.client.post(
+            "/users/login", json={"email": "admin", "password": "admin"}
+        )
+        self.assertEqual(response.status_code, 200)
+        access_token = response.get_json()["jwt_token"]
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+
+        # /clubs/clubid/<clubname> GET endpoint test
+        response = self.client.get("/clubs/clubid/트리플에스", headers=headers)
+        self.assertEqual(response.status_code, 200)
+
     def test_clubs_clubregular_add_invalid_clubid(self):
         # Create the test user
         response  = self.client.post('/users/register', json={
@@ -409,7 +430,20 @@ class MyTest(unittest.TestCase):
         # Test the profiles_user endpoint
         response = self.client.get('/profiles/user', headers=headers)
         self.assertEqual(response.status_code, 200)
-    
+
+    def test_profiles_user_studentid(self):
+        response = self.client.post('/users/login', json={
+            'email': 'email2',
+            'password': 'password123'
+        })
+        self.assertEqual(response.status_code, 200)
+        access_token = response.get_json()['jwt_token']
+        headers = {'Authorization': f'Bearer {access_token}','Content-Type': 'application/json'}
+
+        # Test the profiles_user_studentid endpoint
+        response = self.client.get('/profiles/user/23451', headers=headers)
+        self.assertEqual(response.status_code, 200)
+
     def test_profiles_schedules(self):
         response = self.client.post('/users/login', json={
             'email': 'email2',
