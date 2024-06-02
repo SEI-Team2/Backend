@@ -1,0 +1,83 @@
+name: Docker CI wigh TEST
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+    # 1. Unit Test the flask server by using backend_unit_test.py
+        # python3 -m unittest backend_unit_test.py -> 모든 테스트에 통과되었는 지 확인
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+            - name: Set up Python 3.8
+              uses: actions/setup-python@v2
+              with:
+                python-version: 3.8
+            - name: Install dependencies
+              run: |
+                python -m pip install --upgrade pip
+                pip install -r requirements.txt
+            - name: Run tests
+              run: |
+                python3 -m unittest backend_unit_test.py
+
+    # 2. Deploy to EC2
+        # 2.1. EC2 instance에 접속
+        # 2.2. 기존 서버 정지(cd /home/ubuntu/Backend -> sudo docker compose down)
+        # 2.3. 기존 이미지 삭제(sudo docker rmi $(sudo docker images -q))
+        # 2.4. 남아있는 캐시 삭제(sudo docker system prune -f)
+        # 2.5. 기존 코드 삭제(cd /home/ubuntu -> sudo rm -rf Backend)
+        # 2.6. 새로운 코드 다운로드(git clone https://github.com/SEI-Team2/Backend.git)
+        # 2.7. 새로운 서버 빌드(cd /home/ubuntu/Backend -> sudo docker compose build)
+        # 2.8. 새로운 서버 실행(sudo docker compose up -d)
+    deploy:
+        runs-on: ubuntu-latest
+        needs: test
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+            - name: Deploy to EC2
+              env:
+                HOST: ${{ secrets.EC2_HOST }}
+                USERNAME: ${{ secrets.EC2_USERNAME }}
+                KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+              run: |
+                # Install SSH client
+                sudo apt-get update
+                sudo apt-get install openssh-client -y
+
+                # Start SSH agent
+                eval "$(ssh-agent -s)"
+
+                # Add SSH private key to the ssh-agent
+                mkdir -p ~/.ssh
+                echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+
+                # Set permissions for the config file
+                chmod 644 ~/.ssh/config
+
+                # Add SSH key stored in GitHub secrets to the agent store
+                echo "$KEY" > temp_key
+                chmod 600 temp_key
+                ssh-add temp_key
+                rm temp_key
+
+                # Connect to the server
+                ssh -o 'StrictHostKeyChecking=no' $USERNAME@$HOST << 'ENDSSH'
+
+                # Run the deployment script
+                cd /home/ubuntu/Backend
+                sudo docker-compose down
+                sudo docker rmi $(sudo docker images -q)
+                sudo docker system prune -f
+                cd /home/ubuntu
+                sudo rm -rf Backend
+                git clone https://github.com/SEI-Team2/Backend.git
+                cd /home/ubuntu/Backend
+                sudo docker compose build
+                sudo docker compose up -d
