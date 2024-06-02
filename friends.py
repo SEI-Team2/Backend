@@ -118,7 +118,7 @@ def friends_requests_receive_reject():
 
 
 # 보낸 친구 요청 목록 조회
-@friends_bp.route('/requests/send', methods=['POST'])
+@friends_bp.route('/requests/send', methods=['GET'])
 @jwt_required()
 def friends_requests_send():
     current_userid = get_jwt_identity()
