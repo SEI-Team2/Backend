@@ -15,7 +15,7 @@ def rentals_datetime():
     current_userid = get_jwt_identity()
     data = request.json
     kst = ZoneInfo("Asia/Seoul")
-    date = datetime.now(kst)
+    date = datetime.utcnow(kst)
     return jsonify({'rentals' : date.strftime('%Y-%m-%d %H:%M:%S')), 200
 
 
