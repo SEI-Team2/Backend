@@ -235,7 +235,7 @@ def rentals_create():
         return jsonify({'error': 'Invalid maxpeople value'}), 404
 
     # rental 생성
-    rental = Rentals(spaceid = spaceid, userid = current_userid, starttime = starttime, endtime = endtime, createtime = datetime.now(), maxpeople = maxpeople, minpeople = sportsspace.minpeople, people = 0, rentaltype = Rentals_Types_enum.Light, rentalstatus = Rentals_Status_enum.Open, rentalflag = Rentals_Flags_enum.Nonfix, desc = desc)
+    rental = Rentals(spaceid = spaceid, userid = current_userid, starttime = starttime, endtime = endtime, createtime = datetime.now() + timedelta(hours=9), maxpeople = maxpeople, minpeople = sportsspace.minpeople, people = 0, rentaltype = Rentals_Types_enum.Light, rentalstatus = Rentals_Status_enum.Open, rentalflag = Rentals_Flags_enum.Nonfix, desc = desc)
     db.session.add(rental)
     db.session.commit()
 
