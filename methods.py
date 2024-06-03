@@ -5,15 +5,16 @@ from datetime import *
 from flask_jwt_extended import *
 
 # Rentals 의 모든 튜플들 갱신
-def methods_update_rentals( ) :
+def methods_update_rentals() :
 
     rentals = db.session.query(Rentals).all()
 
     for rental in rentals :   
         ## 모든 일정에 대해 ##
         # 지난 일정은 삭제
-        if datetime.now() >= rental.starttime :
+        if datetime.now() >= rental.endtime :
             db.session.delete(rental)
+            db.session.commit()
             continue
 
         ## 동아리 대여 일정인 경우 
@@ -40,12 +41,14 @@ def methods_update_rentals( ) :
                 else: # 최소인원 미만이면 취소
                     rental.rentalflag = Rentals_Flags_enum.Nonfix
                     rental.rentalstatus = Rentals_Status_enum.Close
+            db.session.commit()
             continue
 
         ## 관리자제한 일정인 경우 
         elif rental.rentaltype == Rentals_Types_enum.Restrict :
             rental.rentalstatus = Rentals_Status_enum.Close
             rental.rentalflag = Rentals_Flags_enum.Fix
+            db.session.commit()
             continue
         
         ## 일반 대여 일정인 경우 ##
@@ -60,9 +63,11 @@ def methods_update_rentals( ) :
             else:
                 if rental.people >= rental.minpeople : # 최소인원 이상이면 확정
                     rental.rentalflag = Rentals_Flags_enum.Fix 
+                    rental.rentalstatus = Rentals_Status_enum.Close
                 else: # 최소인원 미만이면 취소
                     rental.rentalflag = Rentals_Flags_enum.Nonfix
                     rental.rentalstatus = Rentals_Status_enum.Close
+        db.session.commit()
 
     db.session.commit()
 
