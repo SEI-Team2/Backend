@@ -299,6 +299,7 @@ def clubs_clubregular_add():
             .all()
         )
         if rentals :
+            next_occurrence += timedelta(days=7)
             continue
 
         new_rental = Rentals(
