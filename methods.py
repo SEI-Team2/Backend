@@ -3,6 +3,9 @@ from methods import *
 from flask import *
 from datetime import *
 from flask_jwt_extended import *
+import pytz
+
+timezone = pytz.timezone('Asia/Seoul')
 
 # Rentals 의 모든 튜플들 갱신
 def methods_update_rentals() :
