@@ -278,6 +278,63 @@ class MyTest(unittest.TestCase):
         })
         self.assertEqual(response.status_code, 200)
 
+        # 겹치는 일정 생성
+        response = self.client.post(
+            "/rentals/create",
+            headers=headers,
+            json={
+                "spaceid": 1,
+                "starttime": "2024-07-01 10:00:00",
+                "endtime": "2024-07-01 12:00:00",
+                "maxpeople": 10,
+                "desc": "Test Rental",
+                "friends": [],
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(
+            "/rentals/create",
+            headers=headers,
+            json={
+                "spaceid": 1,
+                "starttime": "2024-07-01 11:00:00",
+                "endtime": "2024-07-01 13:00:00",
+                "maxpeople": 10,
+                "desc": "Test Rental",
+                "friends": [],
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(
+            "/rentals/create",
+            headers=headers,
+            json={
+                "spaceid": 1,
+                "starttime": "2024-07-01 9:00:00",
+                "endtime": "2024-07-01 11:00:00",
+                "maxpeople": 10,
+                "desc": "Test Rental",
+                "friends": [],
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(
+            "/rentals/create",
+            headers=headers,
+            json={
+                "spaceid": 1,
+                "starttime": "2024-07-01 9:00:00",
+                "endtime": "2024-07-01 13:00:00",
+                "maxpeople": 10,
+                "desc": "Test Rental",
+                "friends": [],
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+
         # Test the profiles_schedules endpoint
         response = self.client.get('/profiles/schedules', headers=headers)
         self.assertEqual(response.status_code, 200)

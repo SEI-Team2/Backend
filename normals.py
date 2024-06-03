@@ -32,10 +32,9 @@ def normals_restrict():
         .filter(
             Rentals.spaceid == spaceid,
             or_(
-                and_(Rentals.starttime > starttime, Rentals.starttime < endtime),
-                and_(Rentals.endtime > starttime, Rentals.endtime < endtime),
-                and_(Rentals.starttime < starttime, Rentals.endtime > endtime),
-                and_(Rentals.starttime > starttime, Rentals.endtime < endtime),
+                and_(Rentals.starttime <= starttime, starttime < Rentals.endtime),
+                and_(Rentals.starttime < endtime, endtime <= Rentals.endtime),
+                and_(starttime <= Rentals.starttime, Rentals.endtime <= endtime),
             ),
         )
         .all()

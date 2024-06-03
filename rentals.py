@@ -185,7 +185,7 @@ def rentals_create():
     space = db.session.query(SportsSpace).filter(SportsSpace.spaceid == spaceid).first()
     if not space:
         return jsonify({'error': 'Space ID is invalid'}), 400
-    
+
     # time 검사
     if starttime >= endtime :
         return jsonify({'error': 'Invalid starttime and endtime'}), 401
@@ -193,15 +193,18 @@ def rentals_create():
     if not (6 <= starttime.hour <= 22) or not (6 <= endtime.hour <= 22) :
         return jsonify({'error': 'Invalid starttime and endtime'}), 402
 
-    rental = db.session.query(Rentals).filter(
-    Rentals.spaceid == spaceid,
-    or_(
-        and_(Rentals.starttime > starttime, Rentals.starttime < endtime),
-        and_(Rentals.endtime > starttime, Rentals.endtime < endtime),
-        and_(Rentals.starttime < starttime, Rentals.endtime > endtime),
-        and_(Rentals.starttime > starttime, Rentals.endtime < endtime)
+    rental = (
+        db.session.query(Rentals)
+        .filter(
+            Rentals.spaceid == spaceid,
+            or_(
+                and_(Rentals.starttime <= starttime, starttime < Rentals.endtime),
+                and_(Rentals.starttime < endtime, endtime <= Rentals.endtime),
+                and_(starttime <= Rentals.starttime, Rentals.endtime <= endtime),
+            ),
+        )
+        .first()
     )
-    ).first()
     if rental :
         return jsonify({'error': 'Rental already exist'}), 403
 
@@ -209,7 +212,7 @@ def rentals_create():
     sportsspace = db.session.query(SportsSpace).filter(
         SportsSpace.spaceid == spaceid
     ).first() 
-    
+
     if not (sportsspace.minpeople <= maxpeople <= sportsspace.maxpeople) :
         return jsonify({'error': 'Invalid maxpeople value'}), 404
 
@@ -233,7 +236,7 @@ def rentals_create():
         db.session.add(rentalparticipant)
         db.session.commit()
         rental.people += 1
-    
+
     db.session.commit()
 
     return jsonify({}), 200
@@ -272,4 +275,3 @@ def rentals_delete():
     db.session.commit()
 
     return jsonify({}), 200
-
