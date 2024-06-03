@@ -12,7 +12,7 @@ rentals_bp = Blueprint('rentals', __name__)
 def rentals_datetime():
     current_userid = get_jwt_identity()
     data = request.json
-    date = datetime.utcnow()
+    date = datetime.now(timezone)
     return jsonify({'rentals' : date.strftime('%Y-%m-%d %H:%M:%S')), 200
 
 
