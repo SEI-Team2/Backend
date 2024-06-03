@@ -12,8 +12,9 @@ rentals_bp = Blueprint('rentals', __name__)
 def rentals_datetime():
     current_userid = get_jwt_identity()
     data = request.json
-    date = datetime.now() +  timedelta(hours=9)
-    return jsonify({'rentals' : date.strftime('%Y-%m-%d %H:%M:%S')}), 200
+    date1 = datetime.now()
+    date2 = datetime.now() +  timedelta(hours=9)
+    return jsonify({'date1' : date1.strftime('%Y-%m-%d %H:%M:%S'), 'date2' : date2.strftime('%Y-%m-%d %H:%M:%S')}), 200
 
 
 # 대여 조회(참여 가능한 일정들만)
