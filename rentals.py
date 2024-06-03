@@ -46,11 +46,18 @@ def rentals_list():
 
     rentals_list = []
     for rental in rentals :
+        name = "번개모임"
+        if rental.rentaltype == Rentals_Types_enum.Club :
+            club = db.session.query(Clubs).filter(Clubs.clubid == rental.clubid).first()
+            if club :
+                name = club.name
         rentals_list.append({
             'rentalid': rental.rentalid,
             'spaceid': rental.spaceid,
             'userid': rental.userid,
 
+            'name' : name,
+            
             'clubid': rental.clubid,
             'timelimit': rental.timelimit,
             
