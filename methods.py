@@ -128,7 +128,7 @@ def methods_init_datas() :
 
     sportspaces = [
         SportsSpace(spaceid=0,name='TennisCourt', minpeople=8, maxpeople=16),
-        SportsSpace(spaceid=1,name='BasketballCourt', minpeople=1, maxpeople=20),
+        SportsSpace(spaceid=1,name='BasketballCourt', minpeople=6, maxpeople=20),
         SportsSpace(spaceid=2,name='SoccerField', minpeople=10, maxpeople=22),
     ]
 
