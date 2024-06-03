@@ -15,7 +15,7 @@ def methods_update_rentals() :
     for rental in rentals :   
         ## 모든 일정에 대해 ##
         # 지난 일정은 삭제
-        if datetime.now() >= rental.endtime :
+        if datetime.now() +  timedelta(hours=9) >= rental.endtime :
             db.session.delete(rental)
             db.session.commit()
             continue
@@ -23,14 +23,14 @@ def methods_update_rentals() :
         ## 동아리 대여 일정인 경우 
         if rental.rentaltype == Rentals_Types_enum.Club :
             # 72시간 넘게 남았을 때
-            if datetime.now() <= rental.starttime - timedelta(hours=72):
+            if datetime.now() + timedelta(hours=9) <= rental.starttime - timedelta(hours=72):
                 if rental.people >= rental.maxpeople :
                     rental.rentalstatus = Rentals_Status_enum.Close
                     rental.rentalflag = Rentals_Flags_enum.Fix
                 else:
                     rental.rentalstatus = Rentals_Status_enum.Half # 동아리원만 접근 가능
                     rental.rentalflag = Rentals_Flags_enum.Nonfix
-            elif datetime.now() <= rental.starttime - timedelta(hours=1):
+            elif datetime.now() +  timedelta(hours=9) <= rental.starttime - timedelta(hours=1):
                 if rental.people >= rental.maxpeople :
                     rental.rentalstatus = Rentals_Status_enum.Close
                     rental.rentalflag = Rentals_Flags_enum.Fix
@@ -56,7 +56,7 @@ def methods_update_rentals() :
         
         ## 일반 대여 일정인 경우 ##
         else :
-            if datetime.now() < rental.starttime - timedelta(hours=1):
+            if datetime.now() +  timedelta(hours=9) < rental.starttime - timedelta(hours=1):
                 if rental.people >= rental.maxpeople : # 최대인원 이상이면 확정
                     rental.rentalstatus = Rentals_Status_enum.Close
                     rental.rentalflag = Rentals_Flags_enum.Fix
@@ -136,10 +136,10 @@ def methods_init_datas() :
     ]
 
     clubs = [
-        Clubs( name='트리플에스', createtime=datetime.now()),
-        Clubs( name='STC', createtime=datetime.now()),
-        Clubs( name='터보', createtime=datetime.now()),
-        Clubs( name='애플트리', createtime=datetime.now()),
+        Clubs( name='트리플에스', createtime=datetime.now() +  timedelta(hours=9)),
+        Clubs( name='STC', createtime=datetime.now() +  timedelta(hours=9)),
+        Clubs( name='터보', createtime=datetime.now() +  timedelta(hours=9)),
+        Clubs( name='애플트리', createtime=datetime.now() +  timedelta(hours=9)),
     ]
 
     clubmembers = [

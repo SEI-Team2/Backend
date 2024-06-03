@@ -4,8 +4,6 @@ from flask import *
 from datetime import *
 from flask_jwt_extended import *
 from sqlalchemy import *
-import pytz
-from zoneinfo import ZoneInfo
 
 rentals_bp = Blueprint('rentals', __name__)
 
@@ -14,9 +12,8 @@ rentals_bp = Blueprint('rentals', __name__)
 def rentals_datetime():
     current_userid = get_jwt_identity()
     data = request.json
-    kst = pytz.timezone("Asia/Seoul")
-    date = datetime.now().astimezone(kst)
-    return jsonify({'rentals' : date.strftime('%Y-%m-%d %H:%M:%S')), 200
+    date = datetime.now() +  timedelta(hours=9)
+    return jsonify({'rentals' : date.strftime('%Y-%m-%d %H:%M:%S')}), 200
 
 
 # 대여 조회(참여 가능한 일정들만)

@@ -48,7 +48,7 @@ def normals_restrict():
             db.session.add(
                 Notifications(
                     userid=rentalparticipant.participantid,
-                    timestamp=datetime.now(),
+                    timestamp=datetime.now() +  timedelta(hours=9),
                     notifytype=Notifications_Types_enum.rental_cancle,
                     rentalid=rental.rentalid,
                     spaceid=rental.spaceid,

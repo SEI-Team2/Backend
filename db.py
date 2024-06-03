@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import *
 from enums import *
-from datetime import datetime
+from datetime import *
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.exc import IntegrityError
 
@@ -17,7 +17,7 @@ class Users(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False) # 이메일
     verified = db.Column(db.Boolean, default = False)
     usertype = db.Column(EnumType(Users_UserType_enum), default = Users_UserType_enum.Student) # 권한
-    regtime = db.Column(db.DateTime, nullable=False, default=datetime.now()) # 가입 시각
+    regtime = db.Column(db.DateTime, nullable=False, default=datetime.now() +  timedelta(hours=9)) # 가입 시각
     password_hash = db.Column(db.String(255), nullable=False) # 패스워드
     
     def set_password(self,password):
@@ -54,9 +54,9 @@ class Rentals(db.Model):
     clubregularid = db.Column(db.Integer, ForeignKey('Clubregulars.clubregularid'))
     timelimit = db.Column(db.Integer, default = None)
 
-    starttime = db.Column(db.DateTime, nullable=False, default=datetime.now()) 
-    endtime = db.Column(db.DateTime, nullable=False, default=datetime.now())  
-    createtime = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    starttime = db.Column(db.DateTime, nullable=False, default=datetime.now()+ timedelta(hours=9)) 
+    endtime = db.Column(db.DateTime, nullable=False, default=datetime.now()+ timedelta(hours=9))  
+    createtime = db.Column(db.DateTime, nullable=False, default=datetime.now()+ timedelta(hours=9))
     
     maxpeople = db.Column(db.Integer, nullable=False, default=0)
     minpeople = db.Column(db.Integer, nullable=False, default=0)
@@ -89,7 +89,7 @@ class Clubs(db.Model):
     __tablename__ = 'Clubs'
     clubid = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(255), unique = True, nullable=False)
-    createtime = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    createtime = db.Column(db.DateTime, nullable=False, default=datetime.now()+ timedelta(hours=9))
     @classmethod
     def get_or_create(cls, name):
         club = cls.query.filter_by(name=name).first()
@@ -115,7 +115,7 @@ class Notifications(db.Model):
     __tablename__ = 'Notifications'
     notificationid = db.Column(db.Integer, primary_key=True)
     userid = db.Column(db.Integer,ForeignKey('Users.userid'), nullable = False)   
-    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now()+ timedelta(hours=9))
     status = db.Column(EnumType(Notifications_ReadStatus_enum), nullable=False, default = Notifications_ReadStatus_enum.Unread)
 
     # 알림 타입 구분
@@ -136,5 +136,5 @@ class Blacklist(db.Model):
     blackid = db.Column(db.Integer, primary_key=True)
     userid = db.Column(db.Integer, ForeignKey('Users.userid', ondelete='CASCADE'))
     reason = db.Column(db.Text) 
-    createtime = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    createtime = db.Column(db.DateTime, nullable=False, default=datetime.now()+ timedelta(hours=9))
 

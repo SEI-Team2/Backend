@@ -281,7 +281,7 @@ def clubs_clubregular_add():
         end_datetime = datetime.combine(next_occurrence, endtime)
 
         # 현재 시간 이후인지 확인
-        if datetime.now() >= start_datetime :
+        if datetime.now() + timedelta(hours=9) >= start_datetime :
             next_occurrence += timedelta(days=7)
             continue
 
