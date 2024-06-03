@@ -15,7 +15,7 @@ def rentals_datetime():
     current_userid = get_jwt_identity()
     data = request.json
     kst = pytz.timezone("Asia/Seoul")
-    date = datetime.now(kst)
+    date = datetime.now().astimezone(kst)
     return jsonify({'rentals' : date.strftime('%Y-%m-%d %H:%M:%S')), 200
 
 
