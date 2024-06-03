@@ -4,6 +4,7 @@ from flask import *
 from datetime import *
 from flask_jwt_extended import *
 from sqlalchemy import *
+import pytz
 
 rentals_bp = Blueprint('rentals', __name__)
 
@@ -12,7 +13,8 @@ rentals_bp = Blueprint('rentals', __name__)
 def rentals_datetime():
     current_userid = get_jwt_identity()
     data = request.json
-    date = datetime.now(timezone)
+    kt = pytz.timezone('Asia/Seoul')
+    date = datetime.now(kt)
     return jsonify({'rentals' : date.strftime('%Y-%m-%d %H:%M:%S')), 200
 
 
