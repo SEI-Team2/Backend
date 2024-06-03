@@ -291,9 +291,9 @@ def clubs_clubregular_add():
             .filter(
                 Rentals.spaceid == spaceid,
                 or_(
-                    and_(Rentals.starttime <= starttime, starttime < Rentals.endtime),
-                    and_(Rentals.starttime < endtime, endtime <= Rentals.endtime),
-                    and_(starttime <= Rentals.starttime, Rentals.endtime <= endtime),
+                    and_(Rentals.starttime <= start_datetime, start_datetime < Rentals.endtime),
+                    and_(Rentals.starttime < end_datetime, end_datetime <= Rentals.endtime),
+                    and_(start_datetime <= Rentals.starttime, Rentals.endtime <= end_datetime),
                 ),
             )
             .all()
